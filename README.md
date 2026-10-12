@@ -1,4 +1,4 @@
-# EEG Athenalyze
+# EEG Neurolyze
 
 EEG acquisition, preprocessing, and analysis toolkit for Muse S Athena, Python,
 and Windows 11.
@@ -10,6 +10,14 @@ lossless SHA-256-verified native archives, and an EO/EC resting-state synthetic
 workflow with Welch alpha-power comparison and an HTML report. Synthetic data is
 clearly identified as simulated; physical Muse S Athena acquisition, EEG-BIDS
 export, and PsychoPy experiments are not implemented yet.
+
+## Windows 11 one-click tutorial
+
+Run `windows/setup_environment.bat` once, then double-click `windows/run_synthetic_demo.bat`. The scripts use `.venv` and do not install packages globally. The demo creates a new simulated EO/EC archive and HTML report under `data/demo/` (ignored by Git).
+
+Detailed guides: [English](docs/en/quickstart.md) | [Polski](docs/pl/quickstart.md).
+
+These launchers currently run **simulated recordings only**. They do not connect to Muse S Athena or generate BIDS datasets.
 
 ## Quick start
 
