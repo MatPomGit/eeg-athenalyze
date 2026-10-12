@@ -19,7 +19,7 @@ def export_bids(source: Path, root: Path, *, power_line_frequency: float = 50.0)
     """
     import numpy as np
     import mne
-    from mne_bids import BIDSPath, write_raw_bids, make_dataset_description, read_raw_bids
+    from mne_bids import BIDSPath, write_raw_bids, read_raw_bids
 
     recording = load_recording(source)
     metadata = recording.metadata
@@ -42,8 +42,8 @@ def export_bids(source: Path, root: Path, *, power_line_frequency: float = 50.0)
     session = session.removeprefix("ses-")
     if not _LABEL.fullmatch(participant) or not _LABEL.fullmatch(session):
         raise ValueError("Invalid BIDS participant/session identifier")
-    if root.exists() and any(root.iterdir()):
-        raise FileExistsError(f"Output dataset must be a new empty directory: {root}")
+    if root.exists():
+        raise FileExistsError(f"Output dataset must not exist: {root}")
     info = mne.create_info(
         list(recording.channel_names),
         sfreq=recording.sample_rate_hz,
@@ -79,11 +79,6 @@ def export_bids(source: Path, root: Path, *, power_line_frequency: float = 50.0)
         written = write_raw_bids(
             raw, path, format="BrainVision", allow_preload=True,
             overwrite=False, verbose=False,
-        )
-        make_dataset_description(
-            name="EEG Neurolyze synthetic resting-state demonstration",
-            dataset_type="raw",
-            path=root,
         )
         # The BrainVision export is a converted representation, not the native archive.
         restored = read_raw_bids(written, verbose=False)
