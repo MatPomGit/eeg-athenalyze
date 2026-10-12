@@ -83,6 +83,32 @@ def _analyze_session(arguments: argparse.Namespace) -> int:
     return 0
 
 
+
+def _bids_export(arguments: argparse.Namespace) -> int:
+    from eeg_athenalyze.bids import export_bids
+
+    try:
+        dataset = export_bids(arguments.session, arguments.dataset)
+    except (OSError, ValueError, ImportError, RuntimeError) as error:
+        print(f"BIDS export failed: {error}", file=sys.stderr)
+        return 1
+    print(f"Exported EEG-BIDS candidate: {dataset}")
+    print("Run BIDS validation before claiming compliance.")
+    return 0
+
+
+def _bids_validate(arguments: argparse.Namespace) -> int:
+    from eeg_athenalyze.bids import validate_bids
+
+    try:
+        status = validate_bids(arguments.dataset)
+    except (OSError, ValueError, RuntimeError) as error:
+        print(f"BIDS validation failed: {error}", file=sys.stderr)
+        return 1
+    print(f"BIDS validator exit status: {status}")
+    return status
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="eeg-athenalyze")
     subcommands = parser.add_subparsers(dest="command", required=True)
@@ -121,6 +147,16 @@ def main(argv: list[str] | None = None) -> int:
     analyze.add_argument("--session", type=Path, required=True)
     analyze.add_argument("--output", type=Path)
     analyze.set_defaults(handler=_analyze_session)
+
+    bids = subcommands.add_parser("bids", help="EEG-BIDS export and validation")
+    bids_commands = bids.add_subparsers(dest="bids_command", required=True)
+    bids_export = bids_commands.add_parser("export")
+    bids_export.add_argument("--session", type=Path, required=True)
+    bids_export.add_argument("--dataset", type=Path, required=True)
+    bids_export.set_defaults(handler=_bids_export)
+    bids_validate = bids_commands.add_parser("validate")
+    bids_validate.add_argument("--dataset", type=Path, required=True)
+    bids_validate.set_defaults(handler=_bids_validate)
 
     arguments = parser.parse_args(argv)
     return arguments.handler(arguments)
