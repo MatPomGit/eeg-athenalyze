@@ -73,7 +73,7 @@ max-width: 900px; padding: 0 1rem; }}
 table {{ border-collapse: collapse; margin: 1rem 0; }}
 th, td {{ border: 1px solid #bbb; padding: .4rem .7rem; text-align: left; }}
 .warning {{ border-left: 4px solid #ed7d31; padding: .6rem 1rem; background: #fff5eb; }}
-svg {{ max-width: 100%; }} svg text {{ font: 13px sans-serif; }}
+svg {{ max-width: 100%; }} svg.analysis-chart text {{ font: 13px sans-serif; }}
 .brand {{ max-width: 570px; margin: 0 0 1rem; }}
 </style>
 </head>
@@ -104,7 +104,7 @@ descriptive and does not identify a cognitive or clinical state.</p>
 <table><thead><tr><th>Channel</th><th>Eyes open (&micro;V<sup>2</sup>)</th>
 <th>Eyes closed (&micro;V<sup>2</sup>)</th><th>Relative change</th></tr></thead>
 <tbody>{"".join(rows)}</tbody></table>
-<svg viewBox="0 0 360 {max(1, len(recording.channel_names)) * 58}" role="img"
+<svg class="analysis-chart" viewBox="0 0 360 {max(1, len(recording.channel_names)) * 58}" role="img"
 aria-label="Alpha power by channel; blue is eyes open and orange is eyes closed">
 {"".join(bars)}
 <text x="55" y="{len(recording.channel_names) * 58 - 3}" fill="#4472c4">Eyes open</text>
