@@ -34,15 +34,15 @@ def export_alpha_derivatives(source: Path, bids_root: Path) -> Path:
         raise FileExistsError(f"Derivative already exists: {output}")
     with tempfile.TemporaryDirectory(prefix="neurolyze-deriv-") as scratch:
         staged = Path(scratch)
+        source_description = json.loads((bids_root / "dataset_description.json").read_text(encoding="utf-8"))
+        if not source_description.get("BIDSVersion"):
+            raise ValueError("Raw dataset has no BIDSVersion")
         (staged / "dataset_description.json").write_text(
             json.dumps({
                 "Name": "EEG Neurolyze alpha power derivatives",
-                "BIDSVersion": json.loads(
-                    (bids_root / "dataset_description.json").read_text(encoding="utf-8")
-                ).get("BIDSVersion", "1.10.0"),
+                "BIDSVersion": source_description["BIDSVersion"],
                 "DatasetType": "derivative",
                 "GeneratedBy": [{"Name": "EEG Neurolyze", "Version": "0.1.0"}],
-                "SourceDatasets": [{"URL": "file://../../"}],
             }, indent=2), encoding="utf-8"
         )
         with (staged / "alpha.tsv").open("w", newline="", encoding="utf-8") as handle:
