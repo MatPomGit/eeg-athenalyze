@@ -4,6 +4,8 @@ on:
     paths:
       - "src/**"
       - "tests/test_bids.py"
+      - "tests/test_derivatives.py"
+      - "src/eeg_athenalyze/derivatives.py"
       - "pyproject.toml"
       - ".github/workflows/bids.yml"
   workflow_dispatch:

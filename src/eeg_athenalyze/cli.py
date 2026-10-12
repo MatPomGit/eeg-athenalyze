@@ -109,6 +109,18 @@ def _bids_validate(arguments: argparse.Namespace) -> int:
     return status
 
 
+def _bids_derivatives(arguments: argparse.Namespace) -> int:
+    from eeg_athenalyze.derivatives import export_alpha_derivatives
+
+    try:
+        path = export_alpha_derivatives(arguments.session, arguments.dataset)
+    except (OSError, ValueError) as error:
+        print(f"BIDS derivatives failed: {error}", file=sys.stderr)
+        return 1
+    print(f"Saved custom alpha-power derivative: {path}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="eeg-athenalyze")
     subcommands = parser.add_subparsers(dest="command", required=True)
@@ -157,6 +169,11 @@ def main(argv: list[str] | None = None) -> int:
     bids_validate = bids_commands.add_parser("validate")
     bids_validate.add_argument("--dataset", type=Path, required=True)
     bids_validate.set_defaults(handler=_bids_validate)
+
+    derivatives = bids_commands.add_parser("derivatives", help="write custom EO/EC derivatives")
+    derivatives.add_argument("--session", type=Path, required=True)
+    derivatives.add_argument("--dataset", type=Path, required=True)
+    derivatives.set_defaults(handler=_bids_derivatives)
 
     arguments = parser.parse_args(argv)
     return arguments.handler(arguments)
