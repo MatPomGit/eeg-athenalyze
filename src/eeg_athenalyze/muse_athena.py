@@ -78,7 +78,10 @@ def record_athena(output: Path, settings: AthenaSettings | None = None) -> Path:
     board = shim(board_id, params)
     prepared = False
     started = False
-    chunks: list[object] = []
+    journal_path = Path(str(output) + '.partial.jsonl')
+    if output.exists() or journal_path.exists():
+        raise FileExistsError('Archive or recovery journal already exists')
+    chunks_written = 0
     start_utc = datetime.now(timezone.utc).isoformat()
     try:
         board.prepare_session()
