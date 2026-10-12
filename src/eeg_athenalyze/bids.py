@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 import re
 import shutil
@@ -42,6 +43,8 @@ def export_bids(source: Path, root: Path, *, power_line_frequency: float = 50.0)
     session = session.removeprefix("ses-")
     if not _LABEL.fullmatch(participant) or not _LABEL.fullmatch(session):
         raise ValueError("Invalid BIDS participant/session identifier")
+    if not math.isfinite(power_line_frequency) or power_line_frequency <= 0:
+        raise ValueError("Power-line frequency must be positive and finite")
     if root.exists():
         raise FileExistsError(f"Output dataset must not exist: {root}")
     info = mne.create_info(
@@ -64,9 +67,18 @@ def export_bids(source: Path, root: Path, *, power_line_frequency: float = 50.0)
             raise ValueError("Invalid event")
         onset = float(event["onset_seconds"])
         duration = float(event["duration_seconds"])
-        if onset < 0 or duration < 0 or onset + duration > len(timestamps) / recording.sample_rate_hz + 1e-6:
-            raise ValueError("Event outside recording")
-        annotations.append((onset, duration, str(event["condition"])))
+        condition = event["condition"]
+        if not isinstance(condition, str) or not condition.strip():
+            raise ValueError("Event condition must be a nonempty string")
+        if (
+            not math.isfinite(onset)
+            or not math.isfinite(duration)
+            or onset < 0
+            or duration < 0
+            or onset + duration > len(timestamps) / recording.sample_rate_hz + 1e-6
+        ):
+            raise ValueError("Invalid event onset or duration")
+        annotations.append((onset, duration, condition))
     if annotations:
         raw.set_annotations(mne.Annotations(
             onset=[e[0] for e in annotations],
@@ -84,6 +96,24 @@ def export_bids(source: Path, root: Path, *, power_line_frequency: float = 50.0)
         restored = read_raw_bids(written, verbose=False)
         exported = restored.get_data()
         original = raw.get_data()
+        if restored.ch_names != raw.ch_names:
+            raise ValueError("BIDS read-back channel names/order mismatch")
+        if not math.isclose(restored.info["sfreq"], recording.sample_rate_hz, rel_tol=0, abs_tol=1e-9):
+            raise ValueError("BIDS read-back sampling rate mismatch")
+        observed_annotations = list(zip(
+            restored.annotations.onset,
+            restored.annotations.duration,
+            restored.annotations.description,
+        ))
+        if len(observed_annotations) != len(annotations):
+            raise ValueError("BIDS read-back event count mismatch")
+        for expected_event, observed_event in zip(annotations, observed_annotations):
+            if (
+                not math.isclose(expected_event[0], observed_event[0], abs_tol=1 / recording.sample_rate_hz, rel_tol=0)
+                or not math.isclose(expected_event[1], observed_event[1], abs_tol=1 / recording.sample_rate_hz, rel_tol=0)
+                or expected_event[2] != observed_event[2]
+            ):
+                raise ValueError("BIDS read-back event mismatch")
         if exported.shape != original.shape or not np.allclose(
             exported, original, atol=1e-8, rtol=1e-4
         ):
