@@ -82,7 +82,6 @@ def export_bids(source: Path, root: Path, *, power_line_frequency: float = 50.0)
         )
         make_dataset_description(
             name="EEG Neurolyze synthetic resting-state demonstration",
-            bids_version=None,
             dataset_type="raw",
             path=root,
         )
