@@ -117,6 +117,10 @@ def record_athena(output: Path, settings: AthenaSettings | None = None) -> Path:
     eeg = matrix[indices, :].T
     if not np.all(np.isfinite(eeg)):
         raise RuntimeError("Non-finite EEG values; no file written")
+    deltas = np.diff(timestamps)
+    nominal_period = 1.0 / float(info["sampling_rate_hz"])
+    suspected_gaps = int(np.count_nonzero(deltas > nominal_period * 1.5))
+    largest_interval = float(deltas.max()) if len(deltas) else 0.0
     # Read-back archive keeps BrainFlow's microvolt values and elapsed
     # source timestamps. Absolute epoch timestamps are preserved in metadata.
     recording = Recording(
@@ -136,6 +140,10 @@ def record_athena(output: Path, settings: AthenaSettings | None = None) -> Path:
             "source_eeg_indices": indices,
             "source_timestamp_index": timestamp_index,
             "source_sample_count": len(source_t),
+            "suspected_timestamp_gaps": suspected_gaps,
+            "largest_source_interval_seconds": largest_interval,
+            "recording_end_utc": datetime.now(timezone.utc).isoformat(),
+            "source_clock_kind": "BrainFlow timestamp; physical timing unverified",
             "connection_configuration": {
                 "preset_command": settings.preset_command,
                 "serial_number_specified": bool(settings.serial_number),
