@@ -67,6 +67,18 @@ Install optional requirements in the isolated environment:
 
 Replace RECORDING with the generated archive filename. See [English instructions](docs/en/bids.md) and [instrukcja po polsku](docs/pl/bids.md). The exporter currently accepts **synthetic, uniformly sampled recordings only**. BIDS compliance is reported only after official validation; real hardware support and BIDS derivatives remain pending.
 
+## Real Muse S Athena acquisition (M03 development)
+
+Use the isolated Python environment and install the optional BrainFlow adapter:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install ".[muse]"
+.\.venv\Scripts\python.exe -m eeg_athenalyze devices check --device muse-athena
+.\.venv\Scripts\python.exe -m eeg_athenalyze record --device muse-athena --duration 30 --output data\local\physical-session.eegz
+```
+
+This is a **physical recording path**, never a simulated fallback. The code has not yet been tested with an actual Muse S Athena; do not use it for research data until the hardware validation checklist passes. See [English guide](docs/en/muse-athena.md), [polska instrukcja](docs/pl/muse-athena.md), and [TODO](TODO.md).
+
 ## Development
 
 Run the standard-library tests without hardware or third-party runtime packages:
