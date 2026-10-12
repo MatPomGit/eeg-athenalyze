@@ -12,4 +12,6 @@ Można opcjonalnie wskazać `--serial-number` lub `--mac-address`; nie umieszcza
 
 Moduł rejestruje cztery podstawowe kanały EEG i źródłowe znaczniki czasu BrainFlow. Przed testem na opasce nie można uznać za zweryfikowanej referencji elektrod ani dokładności czasowej. **Eksporter EEG-BIDS nadal przyjmuje wyłącznie dane syntetyczne.**
 
-Ograniczenia: akwizycja odbywa się w pamięci; przerwane sesje nie są jeszcze zachowywane częściowo. Długie badania, wykrywanie utraty pakietów, dodatkowe presety i kontrola jakości na sprzęcie wymagają dalszej implementacji. Zobacz [TODO](../../TODO.md).
+Akwizycja dopisuje próbki do dziennika `.partial.jsonl` z synchronizacją zapisu na dysk. Po przerwaniu kompletne rekordy pozostają do odzyskania funkcją `eeg_athenalyze.acquisition_journal.recover_journal`; nie są jeszcze automatycznie przekształcane w końcowe archiwum. Dziennik jest usuwany dopiero po prawidłowym utworzeniu `.eegz`. Nie usuwaj pliku dziennika po awarii.
+
+Ograniczenia: końcowe tworzenie archiwum nadal wczytuje próbki do RAM, a odzyskiwanie częściowych nagrań nie posiada jeszcze interfejsu dla początkujących. Długie badania, wykrywanie utraty pakietów, dodatkowe presety i kontrola jakości na sprzęcie wymagają dalszej implementacji. Zobacz [TODO](../../TODO.md).
