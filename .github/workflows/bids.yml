@@ -1,0 +1,35 @@
+name: EEG-BIDS integration
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/test_bids.py"
+      - "pyproject.toml"
+      - ".github/workflows/bids.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  bids:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install BIDS dependencies
+        run: python -m pip install ".[bids]"
+      - name: Unit and integration tests
+        run: python -m unittest discover -s tests -v
+      - name: Create synthetic recording and export BIDS
+        shell: bash
+        run: |
+          python -m eeg_athenalyze experiment run eyes-open-closed --output data/demo --duration-scale 0.05 --seed 42
+          SRC=$(python -c "from pathlib import Path; print(next(Path('data/demo').glob('*.eegz')))")
+          python -m eeg_athenalyze bids export --session "$SRC" --dataset data/bids/ds-demo
+          python -m eeg_athenalyze bids validate --dataset data/bids/ds-demo

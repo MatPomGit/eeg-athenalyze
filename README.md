@@ -55,6 +55,18 @@ The analysis reports per-channel 8–13 Hz alpha-band power for eyes-open and
 eyes-closed blocks. It is an educational signal summary, not a diagnosis or a
 validated BIDS export.
 
+## EEG-BIDS export (M02 preview)
+
+Install optional requirements in the isolated environment:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install ".[bids]"
+.\.venv\Scripts\python.exe -m eeg_athenalyze bids export --session "data\demo\RECORDING.eegz" --dataset "data\bids\ds-demo"
+.\.venv\Scripts\python.exe -m eeg_athenalyze bids validate --dataset "data\bids\ds-demo"
+```
+
+Replace RECORDING with the generated archive filename. See [English instructions](docs/en/bids.md) and [instrukcja po polsku](docs/pl/bids.md). The exporter currently accepts **synthetic, uniformly sampled recordings only**. BIDS compliance is reported only after official validation; real hardware support and BIDS derivatives remain pending.
+
 ## Development
 
 Run the standard-library tests without hardware or third-party runtime packages:

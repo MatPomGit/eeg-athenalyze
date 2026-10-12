@@ -11,6 +11,9 @@ requires-python = ">=3.12"
 license = "Apache-2.0"
 dependencies = []
 
+[project.optional-dependencies]
+bids = ["numpy>=1.26,<3", "mne>=1.9,<2", "mne-bids>=0.17,<1", "pybv>=0.7,<1", "bids-validator-deno>=3.0,<4"]
+
 [project.scripts]
 eeg-athenalyze = "eeg_athenalyze.cli:main"
 
