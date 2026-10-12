@@ -15,7 +15,8 @@ Statuses: **implemented** = code present; **verified** = relevant executed tests
 ## Implementation snapshot: 2026-10-12
 - M01: code and launchers present; original synthetic pipeline has automated tests. Verification status must follow actual CI, not documentation assertions.
 - M02: initial BrainVision exporter and official validator merged in PR #4; custom derivative export is under review in PR #5, not yet merged. Physical device metadata/real timing remain unverified.
-- M03-M07: planned. Do not mark implemented without merged code and evidence.
+- M03: native BrainFlow acquisition adapter, diagnostics, CLI, local archive and mocked CI tests developed in the M03 PR. **Physical hardware validation remains pending**.
+- M04-M07: planned. Do not mark implemented without merged code and evidence.
 - Package imports retain `eeg_athenalyze`; public project is EEG Neurolyze. Naming migration requires compatibility ADR.
 
 ## Research-grade gates
@@ -27,4 +28,4 @@ Statuses: **implemented** = code present; **verified** = relevant executed tests
 6. **Privacy:** pseudonymous identifiers; no accidental exposure through Git or reports.
 
 ## Next recommended implementation
-M02: complete PR #5 CI and review custom derivatives, then verify the complete EEG metadata/event mapping and retained provenance against official BIDS rules before declaring the milestone fully closed. Hardware integration may progress in parallel only on separate, bounded PRs; do not merge unsupported physical-device claims.
+M02: complete PR #5 CI and review custom derivatives, then verify the complete EEG metadata/event mapping and retained provenance against official BIDS rules before declaring the milestone fully closed. M03 hardware integration follows in a bounded PR; acceptance still requires Windows 11 tests with physical Muse S Athena, clock-gap characterization and safe interrupted-session archival.
