@@ -21,7 +21,8 @@ Statuses: [x] implemented in main, [ ] planned or pending verification; see [roa
 - [ ] Confirm runtime board identifier spelling, sampling rate, electrode mapping, reference and units.
 - [ ] Quantify BLE dropouts, source-clock discontinuities, packet-count agreement and sustained recording stability.
 - [ ] Support per-preset archival for IMU and raw optical streams without mixing them into scalp EEG.
-- [ ] Support lossless streaming to disk / resumable interrupted archives; current in-memory recording is unsuitable for long sessions.
+- [x] Append-only fsync-backed acquisition journal and recoverable complete rows, with journal removed only after successful archive finalization (new PR).
+- [ ] Implement streamed final archive conversion to bound memory for very long sessions, automated recovery CLI and crash-injection tests. Journal recovery currently reads all complete samples into memory.
 - [ ] Implement gap-aware measured-data conversion and validation for BIDS; currently BIDS intentionally accepts synthetic source only.
 - [ ] Validate real EO/EC session quality and complete experiment timing; do not claim hardware readiness before this gate.
 
