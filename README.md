@@ -3,6 +3,15 @@
 EEG acquisition, preprocessing, and analysis toolkit for Muse S Athena, Python,
 and Windows 11.
 
+## Architecture and roadmap
+
+- [Full project concept and system architecture](docs/architecture/PROJECT-CONCEPT.md)
+- [Architecture Decision Records](docs/architecture/adr/README.md)
+- [Implementation roadmap and verification gates](docs/architecture/ROADMAP.md)
+- [Agent development rules](AGENTS.md)
+
+The public project is **EEG Neurolyze**; the existing installed Python package and CLI still use the legacy `eeg_athenalyze` / `eeg-athenalyze` names pending a compatibility-managed migration.
+
 ## Current status
 
 The initial implementation provides deterministic synthetic EEG generation,
