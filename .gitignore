@@ -1,0 +1,9 @@
+.venv/
+.venv-psychopy/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+data/
+reports/
