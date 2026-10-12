@@ -1,5 +1,7 @@
 # EEG Neurolyze
 
+![EEG Neurolyze logo](src/eeg_athenalyze/assets/neurolyze-logo.svg)
+
 EEG acquisition, preprocessing, and analysis toolkit for Muse S Athena, Python,
 and Windows 11.
 

@@ -60,23 +60,26 @@ def write_resting_report(
         for event in events
         if isinstance(event, dict)
     )
+    logo = (Path(__file__).resolve().parents[1] / "assets" / "neurolyze-logo.svg").read_text(encoding="utf-8")
     page = f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EEG Athenalyze resting-state report</title>
+<title>EEG Neurolyze resting-state report</title>
 <style>
 body {{ font: 16px system-ui, sans-serif; margin: 2rem auto;
 max-width: 900px; padding: 0 1rem; }}
 table {{ border-collapse: collapse; margin: 1rem 0; }}
 th, td {{ border: 1px solid #bbb; padding: .4rem .7rem; text-align: left; }}
 .warning {{ border-left: 4px solid #ed7d31; padding: .6rem 1rem; background: #fff5eb; }}
-svg {{ max-width: 100%; }} svg text {{ font: 13px sans-serif; }}
+svg {{ max-width: 100%; }} svg.analysis-chart text {{ font: 13px sans-serif; }}
+.brand {{ max-width: 570px; margin: 0 0 1rem; }}
 </style>
 </head>
 <body>
-<h1>EEG Athenalyze: EO/EC resting-state report</h1>
+<div class="brand" aria-label="EEG Neurolyze project logo">{logo}</div>
+<h1>EEG Neurolyze: EO/EC resting-state report</h1>
 <p class="warning">Simulated EEG; not a clinical result or a hardware-validated
 recording.
 Timing and signal quality have not been validated with physical equipment.</p>
@@ -101,7 +104,7 @@ descriptive and does not identify a cognitive or clinical state.</p>
 <table><thead><tr><th>Channel</th><th>Eyes open (&micro;V<sup>2</sup>)</th>
 <th>Eyes closed (&micro;V<sup>2</sup>)</th><th>Relative change</th></tr></thead>
 <tbody>{"".join(rows)}</tbody></table>
-<svg viewBox="0 0 360 {max(1, len(recording.channel_names)) * 58}" role="img"
+<svg class="analysis-chart" viewBox="0 0 360 {max(1, len(recording.channel_names)) * 58}" role="img"
 aria-label="Alpha power by channel; blue is eyes open and orange is eyes closed">
 {"".join(bars)}
 <text x="55" y="{len(recording.channel_names) * 58 - 3}" fill="#4472c4">Eyes open</text>
