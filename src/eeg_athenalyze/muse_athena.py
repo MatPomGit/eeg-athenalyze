@@ -115,18 +115,20 @@ def record_athena(output: Path, settings: AthenaSettings | None = None) -> Path:
         elif prepared:
             board.release_session()
 
-    if not chunks:
-        raise RuntimeError("Muse S Athena returned no EEG samples; no file written")
+    if not chunks_written:
+        raise RuntimeError("Muse S Athena returned no EEG samples; journal retained")
     import numpy as np
 
-    matrix = np.concatenate(chunks, axis=1)
+    rows, times = recover_journal(journal_path, channel_count=len(CHANNEL_NAMES))
+    if len(rows) != chunks_written:
+        raise RuntimeError("Recovery journal sample count mismatch")
     indices = info["eeg_indices"]
     timestamp_index = int(info["timestamp_channel"])
-    timestamps = matrix[timestamp_index, :]
+    timestamps = np.asarray(times, dtype=float)
     if not np.all(np.isfinite(timestamps)) or np.any(np.diff(timestamps) <= 0):
         raise RuntimeError("Missing or non-monotonic source timestamps; no file written")
     source_t = tuple(float(t - timestamps[0]) for t in timestamps)
-    eeg = matrix[indices, :].T
+    eeg = np.asarray(rows, dtype=float)
     if not np.all(np.isfinite(eeg)):
         raise RuntimeError("Non-finite EEG values; no file written")
     deltas = np.diff(timestamps)
@@ -165,4 +167,6 @@ def record_athena(output: Path, settings: AthenaSettings | None = None) -> Path:
             "electrode_reference_verified": False,
         },
     )
-    return save_recording(recording, output)
+    result = save_recording(recording, output)
+    journal_path.unlink()
+    return result
