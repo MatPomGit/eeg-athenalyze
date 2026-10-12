@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 250" role="img" aria-labelledby="title desc">
+<title id="title">EEG Neurolyze</title><desc id="desc">Head, EEG sensors and neural waveform in blue cyan and violet.</desc>
+<defs><linearGradient id="signal" x2="1" y2="1"><stop stop-color="#00cde9"/><stop offset=".55" stop-color="#26a6ff"/><stop offset="1" stop-color="#a45bfa"/></linearGradient><linearGradient id="head" x2="1" y2="1"><stop stop-color="#08173b"/><stop offset="1" stop-color="#0a4c94"/></linearGradient></defs>
+<g transform="translate(15 6)">
+<path d="M137 38 C78 38 44 78 47 126 C48 156 70 172 88 180 L90 209 L119 190 Q148 185 165 166 Q176 154 188 151 L170 126 C182 86 162 46 137 38Z" fill="url(#head)"/>
+<path d="M63 89 C76 41 137 19 183 69" fill="none" stroke="url(#signal)" stroke-width="9" stroke-linecap="round"/>
+<g fill="#00cde9" stroke="#091e51" stroke-width="5"><circle cx="65" cy="88" r="11"/><circle cx="118" cy="38" r="11"/><circle cx="180" cy="67" r="11"/></g>
+<path d="M61 131 Q75 89 104 105 Q124 65 147 99 Q173 91 171 123 Q185 145 164 154 L97 156 Q58 155 61 131Z" fill="none" stroke="#20d2f2" stroke-width="4" opacity=".85"/>
+<path d="M35 138 H72 L83 151 L95 123 L108 153 L121 105 L133 166 L145 129 L155 141 H191" fill="none" stroke="url(#signal)" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="97" cy="104" r="6" fill="#00e5ee"/><circle cx="149" cy="99" r="6" fill="#9d66f6"/>
+</g>
+<text x="224" y="119" fill="#102b61" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="65" font-weight="750" letter-spacing="-2">eeg-</text>
+<text x="355" y="119" fill="#139ee1" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="65" font-weight="750" letter-spacing="-2">neuro</text>
+<text x="538" y="119" fill="#7e56e9" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="65" font-weight="750" letter-spacing="-2">lyze</text>
+<text x="228" y="157" fill="#5c708c" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="20" letter-spacing="3">EEG ACQUISITION · ANALYSIS</text>
+</svg>
