@@ -9,6 +9,7 @@ import time
 import uuid
 
 from eeg_athenalyze.archive import save_recording
+from eeg_athenalyze.acquisition_journal import AcquisitionJournal, recover_journal
 from eeg_athenalyze.recording import Recording
 
 CHANNEL_NAMES = ("TP9", "AF7", "AF8", "TP10")
@@ -77,22 +78,33 @@ def record_athena(output: Path, settings: AthenaSettings | None = None) -> Path:
     board = shim(board_id, params)
     prepared = False
     started = False
-    chunks: list[object] = []
+    journal_path = Path(str(output) + '.partial.jsonl')
+    if output.exists() or journal_path.exists():
+        raise FileExistsError('Archive or recovery journal already exists')
+    chunks_written = 0
     start_utc = datetime.now(timezone.utc).isoformat()
     try:
         board.prepare_session()
         prepared = True
         board.start_stream()
         started = True
-        until = time.monotonic() + settings.duration_seconds
-        while time.monotonic() < until:
-            time.sleep(min(settings.poll_seconds, max(0.0, until - time.monotonic())))
-            batch = board.get_board_data()
-            if batch.shape[1]:
-                chunks.append(batch.copy())
-        tail = board.get_board_data()
-        if tail.shape[1]:
-            chunks.append(tail.copy())
+        with AcquisitionJournal(output, channel_count=len(CHANNEL_NAMES)) as journal:
+            until = time.monotonic() + settings.duration_seconds
+            while time.monotonic() < until:
+                time.sleep(min(settings.poll_seconds, max(0.0, until - time.monotonic())))
+                batch = board.get_board_data()
+                if batch.shape[1]:
+                    journal.append(
+                        batch[info["eeg_indices"], :].T,
+                        batch[int(info["timestamp_channel"]), :],
+                    )
+            tail = board.get_board_data()
+            if tail.shape[1]:
+                journal.append(
+                    tail[info["eeg_indices"], :].T,
+                    tail[int(info["timestamp_channel"]), :],
+                )
+            chunks_written = journal.sample_count
     finally:
         if started:
             try:
@@ -103,18 +115,20 @@ def record_athena(output: Path, settings: AthenaSettings | None = None) -> Path:
         elif prepared:
             board.release_session()
 
-    if not chunks:
-        raise RuntimeError("Muse S Athena returned no EEG samples; no file written")
+    if not chunks_written:
+        raise RuntimeError("Muse S Athena returned no EEG samples; journal retained")
     import numpy as np
 
-    matrix = np.concatenate(chunks, axis=1)
+    rows, times = recover_journal(journal_path, channel_count=len(CHANNEL_NAMES))
+    if len(rows) != chunks_written:
+        raise RuntimeError("Recovery journal sample count mismatch")
     indices = info["eeg_indices"]
     timestamp_index = int(info["timestamp_channel"])
-    timestamps = matrix[timestamp_index, :]
+    timestamps = np.asarray(times, dtype=float)
     if not np.all(np.isfinite(timestamps)) or np.any(np.diff(timestamps) <= 0):
         raise RuntimeError("Missing or non-monotonic source timestamps; no file written")
     source_t = tuple(float(t - timestamps[0]) for t in timestamps)
-    eeg = matrix[indices, :].T
+    eeg = np.asarray(rows, dtype=float)
     if not np.all(np.isfinite(eeg)):
         raise RuntimeError("Non-finite EEG values; no file written")
     deltas = np.diff(timestamps)
@@ -153,4 +167,6 @@ def record_athena(output: Path, settings: AthenaSettings | None = None) -> Path:
             "electrode_reference_verified": False,
         },
     )
-    return save_recording(recording, output)
+    result = save_recording(recording, output)
+    journal_path.unlink()
+    return result
