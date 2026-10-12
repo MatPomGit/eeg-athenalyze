@@ -88,15 +88,23 @@ def record_athena(output: Path, settings: AthenaSettings | None = None) -> Path:
         prepared = True
         board.start_stream()
         started = True
-        until = time.monotonic() + settings.duration_seconds
-        while time.monotonic() < until:
-            time.sleep(min(settings.poll_seconds, max(0.0, until - time.monotonic())))
-            batch = board.get_board_data()
-            if batch.shape[1]:
-                chunks.append(batch.copy())
-        tail = board.get_board_data()
-        if tail.shape[1]:
-            chunks.append(tail.copy())
+        with AcquisitionJournal(output, channel_count=len(CHANNEL_NAMES)) as journal:
+            until = time.monotonic() + settings.duration_seconds
+            while time.monotonic() < until:
+                time.sleep(min(settings.poll_seconds, max(0.0, until - time.monotonic())))
+                batch = board.get_board_data()
+                if batch.shape[1]:
+                    journal.append(
+                        batch[info["eeg_indices"], :].T,
+                        batch[int(info["timestamp_channel"]), :],
+                    )
+            tail = board.get_board_data()
+            if tail.shape[1]:
+                journal.append(
+                    tail[info["eeg_indices"], :].T,
+                    tail[int(info["timestamp_channel"]), :],
+                )
+            chunks_written = journal.sample_count
     finally:
         if started:
             try:
