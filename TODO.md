@@ -25,6 +25,8 @@ Statuses: [x] implemented in main, [ ] planned or pending verification; see [roa
 - [ ] Implement gap-aware measured-data conversion and validation for BIDS; currently BIDS intentionally accepts synthetic source only.
 - [ ] Validate real EO/EC session quality and complete experiment timing; do not claim hardware readiness before this gate.
 
+- [x] Add offline physical archive assessment CLI and Windows 11 hardware validation protocol (implementation only; validation still pending).
+
 ## M04 PsychoPy / LSL
 - [ ] Isolated PsychoPy venv, Builder and Python API experiments.
 - [ ] EEG/marker streams and clock-domain metadata; validate timing against external ground truth.

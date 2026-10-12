@@ -151,6 +151,19 @@ def _record_physical(arguments: argparse.Namespace) -> int:
     return 0
 
 
+def _assess_physical(arguments: argparse.Namespace) -> int:
+    from eeg_athenalyze.hardware_validation import assess_archive
+
+    try:
+        result = assess_archive(arguments.session, arguments.report)
+    except (OSError, ValueError) as error:
+        print(f"Hardware assessment failed: {error}", file=sys.stderr)
+        return 1
+    print(f"Saved hardware assessment: {arguments.report}")
+    print(f"Assessment status: {result['status']} (not hardware certification)")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="eeg-athenalyze")
     subcommands = parser.add_subparsers(dest="command", required=True)
@@ -217,6 +230,11 @@ def main(argv: list[str] | None = None) -> int:
     physical.add_argument("--serial-number", default="")
     physical.add_argument("--mac-address", default="")
     physical.set_defaults(handler=_record_physical)
+
+    assess = device_commands.add_parser("assess", help="assess a real Muse archive")
+    assess.add_argument("--session", type=Path, required=True)
+    assess.add_argument("--report", type=Path, required=True)
+    assess.set_defaults(handler=_assess_physical)
 
     arguments = parser.parse_args(argv)
     return arguments.handler(arguments)
