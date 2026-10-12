@@ -7,7 +7,13 @@ from pathlib import Path
 import sys
 
 from eeg_athenalyze.archive import save_recording
+from eeg_athenalyze.analysis.spectral import compare_resting_alpha
+from eeg_athenalyze.experiments.eyes_open_closed import (
+    EyesOpenClosedConfig,
+    run_eyes_open_closed,
+)
 from eeg_athenalyze.recording import SyntheticConfig, generate_synthetic_recording
+from eeg_athenalyze.reporting.html_report import write_resting_report
 
 
 def _record_synthetic(arguments: argparse.Namespace) -> int:
@@ -33,6 +39,50 @@ def _record_synthetic(arguments: argparse.Namespace) -> int:
     return 0
 
 
+def _run_experiment(arguments: argparse.Namespace) -> int:
+    try:
+        defaults = EyesOpenClosedConfig()
+        config = EyesOpenClosedConfig(
+            stabilization_seconds=defaults.stabilization_seconds
+            * arguments.duration_scale,
+            eyes_open_seconds=defaults.eyes_open_seconds * arguments.duration_scale,
+            break_seconds=defaults.break_seconds * arguments.duration_scale,
+            eyes_closed_seconds=defaults.eyes_closed_seconds
+            * arguments.duration_scale,
+            participant_id=arguments.participant,
+            session_id=arguments.session,
+            synthetic=SyntheticConfig(
+                sample_rate_hz=arguments.sample_rate,
+                seed=arguments.seed,
+            ),
+        )
+        result = run_eyes_open_closed(arguments.output, config=config)
+    except (OSError, ValueError) as error:
+        print(f"Error: {error}", file=sys.stderr)
+        return 1
+    print(f"Saved raw simulated EEG: {result.archive_path}")
+    print(f"Saved EO/EC report: {result.report_path}")
+    return 0
+
+
+def _analyze_session(arguments: argparse.Namespace) -> int:
+    from eeg_athenalyze.archive import load_recording
+
+    try:
+        recording = load_recording(arguments.session)
+        comparison = compare_resting_alpha(recording)
+        report_path = write_resting_report(
+            recording,
+            comparison,
+            arguments.output or arguments.session.with_suffix(".html"),
+        )
+    except (OSError, ValueError) as error:
+        print(f"Error: {error}", file=sys.stderr)
+        return 1
+    print(f"Saved resting-state report: {report_path}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="eeg-athenalyze")
     subcommands = parser.add_subparsers(dest="command", required=True)
@@ -45,6 +95,33 @@ def main(argv: list[str] | None = None) -> int:
     synthetic.add_argument("--seed", type=int, default=0)
     synthetic.add_argument("--condition", default="synthetic")
     synthetic.set_defaults(handler=_record_synthetic)
+
+    experiment = subcommands.add_parser("experiment", help="run an experiment")
+    experiment_commands = experiment.add_subparsers(
+        dest="experiment_command", required=True
+    )
+    run = experiment_commands.add_parser("run")
+    run.add_argument("name", choices=("eyes-open-closed",))
+    run.add_argument("--output", type=Path, required=True)
+    run.add_argument("--participant", default="sub-001")
+    run.add_argument("--session")
+    run.add_argument("--sample-rate", type=float, default=256.0)
+    run.add_argument("--seed", type=int, default=0)
+    run.add_argument(
+        "--duration-scale",
+        type=float,
+        default=1.0,
+        help="scale all protocol blocks (use 1 for the specified 30/120/30/120 s)",
+    )
+    run.set_defaults(handler=_run_experiment)
+
+    analyze = subcommands.add_parser(
+        "analyze", help="analyze an archived EO/EC recording without reacquiring data"
+    )
+    analyze.add_argument("--session", type=Path, required=True)
+    analyze.add_argument("--output", type=Path)
+    analyze.set_defaults(handler=_analyze_session)
+
     arguments = parser.parse_args(argv)
     return arguments.handler(arguments)
 
