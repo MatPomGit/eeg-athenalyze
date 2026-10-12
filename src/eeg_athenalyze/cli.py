@@ -121,6 +121,36 @@ def _bids_derivatives(arguments: argparse.Namespace) -> int:
     return 0
 
 
+def _device_check(arguments: argparse.Namespace) -> int:
+    from eeg_athenalyze.muse_athena import device_info
+
+    try:
+        import json
+        print(json.dumps(device_info(), indent=2))
+        print("BrainFlow layout only; physical connection not verified.")
+        return 0
+    except (RuntimeError, ValueError) as error:
+        print(f"Device diagnostics failed: {error}", file=sys.stderr)
+        return 1
+
+
+def _record_physical(arguments: argparse.Namespace) -> int:
+    from eeg_athenalyze.muse_athena import AthenaSettings, record_athena
+
+    try:
+        output = record_athena(arguments.output, AthenaSettings(
+            duration_seconds=arguments.duration,
+            serial_number=arguments.serial_number,
+            mac_address=arguments.mac_address,
+        ))
+    except (OSError, RuntimeError, ValueError) as error:
+        print(f"Physical Muse S Athena acquisition failed: {error}", file=sys.stderr)
+        return 1
+    print(f"Saved physical EEG source archive: {output}")
+    print("Hardware reference, BLE continuity and source timing remain unverified.")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="eeg-athenalyze")
     subcommands = parser.add_subparsers(dest="command", required=True)
@@ -174,6 +204,19 @@ def main(argv: list[str] | None = None) -> int:
     derivatives.add_argument("--session", type=Path, required=True)
     derivatives.add_argument("--dataset", type=Path, required=True)
     derivatives.set_defaults(handler=_bids_derivatives)
+
+    devices = subcommands.add_parser("devices", help="inspect real EEG device capabilities")
+    device_commands = devices.add_subparsers(dest="device_command", required=True)
+    check = device_commands.add_parser("check")
+    check.add_argument("--device", choices=("muse-athena",), required=True)
+    check.set_defaults(handler=_device_check)
+    physical = subcommands.add_parser("record", help="acquire actual device EEG")
+    physical.add_argument("--device", choices=("muse-athena",), required=True)
+    physical.add_argument("--output", type=Path, required=True)
+    physical.add_argument("--duration", type=float, default=30.0)
+    physical.add_argument("--serial-number", default="")
+    physical.add_argument("--mac-address", default="")
+    physical.set_defaults(handler=_record_physical)
 
     arguments = parser.parse_args(argv)
     return arguments.handler(arguments)
