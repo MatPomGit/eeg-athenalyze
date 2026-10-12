@@ -14,7 +14,8 @@ Statuses: **implemented** = code present; **verified** = relevant executed tests
 
 ## Implementation snapshot: 2026-10-12
 - M01: code and launchers present; original synthetic pipeline has automated tests. Verification status must follow actual CI, not documentation assertions.
-- M02-M07: planned. Do not mark implemented without merged code and evidence.
+- M02: initial BrainVision exporter and official validator merged in PR #4; custom derivative export is under review in PR #5, not yet merged. Physical device metadata/real timing remain unverified.
+- M03-M07: planned. Do not mark implemented without merged code and evidence.
 - Package imports retain `eeg_athenalyze`; public project is EEG Neurolyze. Naming migration requires compatibility ADR.
 
 ## Research-grade gates
@@ -26,4 +27,4 @@ Statuses: **implemented** = code present; **verified** = relevant executed tests
 6. **Privacy:** pseudonymous identifiers; no accidental exposure through Git or reports.
 
 ## Next recommended implementation
-M02: start with a minimal `Recording` → MNE Raw conversion and BrainVision export of synthetic EO/EC, preserving events and refusing unsupported metadata. Add BIDS validator and round-trip tests in CI. Hardware integration may progress in parallel only on separate, bounded PRs; do not merge unsupported physical-device claims.
+M02: complete PR #5 CI and review custom derivatives, then verify the complete EEG metadata/event mapping and retained provenance against official BIDS rules before declaring the milestone fully closed. Hardware integration may progress in parallel only on separate, bounded PRs; do not merge unsupported physical-device claims.
