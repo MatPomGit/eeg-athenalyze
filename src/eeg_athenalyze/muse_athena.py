@@ -9,6 +9,7 @@ import time
 import uuid
 
 from eeg_athenalyze.archive import save_recording
+from eeg_athenalyze.acquisition_journal import AcquisitionJournal, recover_journal
 from eeg_athenalyze.recording import Recording
 
 CHANNEL_NAMES = ("TP9", "AF7", "AF8", "TP10")
