@@ -1,0 +1,43 @@
+name: Core tests
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - "windows/**"
+      - ".github/workflows/core-tests.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - "windows/**"
+      - ".github/workflows/core-tests.yml"
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install package
+        run: python -m pip install .
+      - name: Run standard-library test suite
+        run: python -m unittest discover -s tests -v
+      - name: Verify Windows launcher
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          call windows\setup_environment.bat
+          call windows\check_environment.bat
+          call windows\run_synthetic_demo.bat < NUL
