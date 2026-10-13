@@ -18,7 +18,7 @@ def read_samples(source: Path):
         rows, times = [], []
         with source.open("rb") as stream:
             for index, raw in enumerate(stream, 1):
-                if not raw.endswith(b"\\n"):
+                if not raw.endswith(b"\n"):
                     break  # Preserve an incomplete final journal line.
                 try:
                     item = json.loads(raw)
