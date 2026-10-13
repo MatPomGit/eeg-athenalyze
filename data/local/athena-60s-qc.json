@@ -1,0 +1,49 @@
+{
+  "status": "REQUIRES_PHYSICAL_REVIEW",
+  "source_archive": "athena-60s.eegz",
+  "recording_id": "a5658ffc-1add-4e26-bfe9-aa926fe644f7",
+  "channel_names": [
+    "TP9",
+    "AF7",
+    "AF8",
+    "TP10"
+  ],
+  "sample_count": 15528,
+  "sampling_rate_nominal_hz": 256.0,
+  "median_observed_rate_hz": null,
+  "recording_elapsed_seconds": 60.49475312232971,
+  "gap_threshold_seconds": 0.005859375,
+  "suspected_long_intervals": 879,
+  "largest_interval_seconds": 0.27730584144592285,
+  "channel_ranges_uv": {
+    "TP9": {
+      "minimum_uv": -725.0442531892816,
+      "maximum_uv": 724.9557468107184
+    },
+    "AF7": {
+      "minimum_uv": -39.3853384605994,
+      "maximum_uv": 43.27961911737777
+    },
+    "AF8": {
+      "minimum_uv": -50.71415491668193,
+      "maximum_uv": 57.440639687480925
+    },
+    "TP10": {
+      "minimum_uv": -725.0442531892816,
+      "maximum_uv": 724.9557468107184
+    }
+  },
+  "checks": {
+    "four_channels": true,
+    "has_samples": true,
+    "timestamp_monotonic": false,
+    "no_detected_long_intervals": false,
+    "hardware_reference_verified": false,
+    "physical_timing_verified": false
+  },
+  "notes": [
+    "No BLE packet sequence or ground-truth hardware clock is verified.",
+    "No detected gaps does not prove that packets were never lost.",
+    "Requires review of electrode reference, placement, source clock and firmware."
+  ]
+}
