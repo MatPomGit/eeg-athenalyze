@@ -30,6 +30,17 @@ class JournalTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 AcquisitionJournal(dest, channel_count=2)
 
+    def test_duplicate_timestamp_identifies_sample_and_preserves_prior_chunk(self):
+        with tempfile.TemporaryDirectory() as directory:
+            dest = Path(directory) / "record.eegz"
+            with AcquisitionJournal(dest, channel_count=2) as writer:
+                writer.append(ArrayStub([[1.0, 2.0]]), ArrayStub([100.0]))
+                with self.assertRaisesRegex(ValueError, "sample 1: current=100"):
+                    writer.append(ArrayStub([[3.0, 4.0]]), ArrayStub([100.0]))
+            rows, times = recover_journal(Path(str(dest) + ".partial.jsonl"), channel_count=2)
+            self.assertEqual(rows, [[1.0, 2.0]])
+            self.assertEqual(times, [100.0])
+
     def test_invalid_chunk_is_not_written(self):
         with tempfile.TemporaryDirectory() as directory:
             dest = Path(directory) / "session.eegz"
