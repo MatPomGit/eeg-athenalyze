@@ -22,10 +22,13 @@ class AthenaSettings:
     mac_address: str = ""
     preset_command: str = "preset=p1041;low_latency=true"
     poll_seconds: float = 0.25
+    discovery_timeout_seconds: int = 15
 
     def __post_init__(self) -> None:
         if not math.isfinite(self.duration_seconds) or self.duration_seconds <= 0:
             raise ValueError("Duration must be positive and finite")
+        if not 1 <= self.discovery_timeout_seconds <= 60:
+            raise ValueError("Discovery timeout must be 1 to 60 seconds")
         if not 0.05 <= self.poll_seconds <= 5:
             raise ValueError("Poll period must be 0.05 to 5 seconds")
 
@@ -75,6 +78,7 @@ def record_athena(output: Path, settings: AthenaSettings | None = None) -> Path:
     params.serial_number = settings.serial_number
     params.mac_address = settings.mac_address
     params.other_info = settings.preset_command
+    params.timeout = settings.discovery_timeout_seconds
     board = shim(board_id, params)
     prepared = False
     started = False
@@ -84,7 +88,20 @@ def record_athena(output: Path, settings: AthenaSettings | None = None) -> Path:
     chunks_written = 0
     start_utc = datetime.now(timezone.utc).isoformat()
     try:
-        board.prepare_session()
+        try:
+            board.prepare_session()
+        except Exception as exc:
+            if getattr(exc, "exit_code", None) == 7 or "BOARD_NOT_READY_ERROR" in str(exc):
+                raise RuntimeError(
+                    "Muse S Athena BLE connection opened but the streaming GATT "
+                    "control characteristic may be unavailable. Verify that the "
+                    "device is actually Athena-compatible, close competing Muse "
+                    "apps, reconnect Bluetooth and inspect the FE8D service and "
+                    "273e0001-4c4d-454d-96be-f03bac821358 characteristic. "
+                    "Changing EEG presets cannot create a missing GATT characteristic. "
+                    f"BrainFlow reported: {exc}"
+                ) from exc
+            raise
         prepared = True
         board.start_stream()
         started = True
