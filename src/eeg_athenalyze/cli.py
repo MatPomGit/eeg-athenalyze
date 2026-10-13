@@ -84,6 +84,21 @@ def _analyze_session(arguments: argparse.Namespace) -> int:
 
 
 
+def _plot_session(arguments: argparse.Namespace) -> int:
+    from eeg_athenalyze.visualization import plot_signal
+
+    try:
+        result = plot_signal(
+            arguments.session, output=arguments.output,
+            time_axis=arguments.time_axis, max_points=arguments.max_points,
+        )
+    except (OSError, ValueError, RuntimeError) as error:
+        print(f"EEG plot failed: {error}", file=sys.stderr)
+        return 1
+    print(f"Saved EEG plot: {result}" if result else "EEG plot window closed")
+    return 0
+
+
 def _bids_export(arguments: argparse.Namespace) -> int:
     from eeg_athenalyze.bids import export_bids
 
@@ -203,6 +218,13 @@ def main(argv: list[str] | None = None) -> int:
     analyze.add_argument("--session", type=Path, required=True)
     analyze.add_argument("--output", type=Path)
     analyze.set_defaults(handler=_analyze_session)
+
+    plot = subcommands.add_parser("plot", help="display EEGZ or recovery journal channels")
+    plot.add_argument("--session", type=Path, required=True)
+    plot.add_argument("--output", type=Path, help="save .png, .svg or .pdf instead of showing a window")
+    plot.add_argument("--time-axis", choices=("samples", "source"), default="samples")
+    plot.add_argument("--max-points", type=int, default=8000)
+    plot.set_defaults(handler=_plot_session)
 
     bids = subcommands.add_parser("bids", help="EEG-BIDS export and validation")
     bids_commands = bids.add_subparsers(dest="bids_command", required=True)
