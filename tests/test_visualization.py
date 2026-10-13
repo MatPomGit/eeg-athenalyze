@@ -41,3 +41,29 @@ class VisualizationTests(unittest.TestCase):
             self.assertEqual(len(samples), 2)
             self.assertEqual(times, [12., 12.])
             self.assertEqual(label, "partial journal")
+
+    def test_spectral_views_save_without_modifying_archive(self):
+        try:
+            import matplotlib
+            matplotlib.use("Agg")
+        except ImportError:
+            self.skipTest("plot extra is optional")
+        from eeg_athenalyze.visualization import inspect_signal
+        from eeg_athenalyze.recording import generate_synthetic_recording
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive = save_recording(generate_synthetic_recording(3), root / "eeg.eegz")
+            before = archive.read_bytes()
+            for view in ("trace", "psd", "spectrogram", "all"):
+                output = root / f"{view}.png"
+                self.assertEqual(inspect_signal(
+                    archive, output=output, view=view, channel="AF7",
+                    start=0.5, duration=2.0, scale_uv=120,
+                ), output)
+                self.assertGreater(output.stat().st_size, 1000)
+            self.assertEqual(archive.read_bytes(), before)
+
+    def test_invalid_time_window_rejected(self):
+        from eeg_athenalyze.visualization import inspect_signal
+        with self.assertRaisesRegex(ValueError, "start must"):
+            inspect_signal(Path("missing.eegz"), start=-1)
