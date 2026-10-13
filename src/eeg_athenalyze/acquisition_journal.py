@@ -36,7 +36,7 @@ class AcquisitionJournal:
         last = self._last_timestamp
         for row, value in zip(rows, times):
             t = float(value)
-            if len(row) != self.channel_count or not math.isfinite(t) or t <= last:
+            if len(row) != self.channel_count or not math.isfinite(t) or t < last:
                 raise ValueError("Invalid EEG chunk or source timestamps")
             if not all(math.isfinite(float(item)) for item in row):
                 raise ValueError("Nonfinite EEG measurement")
@@ -82,7 +82,7 @@ def recover_journal(path: Path, *, channel_count: int) -> tuple[list[list[float]
             if (
                 len(row) != channel_count
                 or not math.isfinite(timestamp)
-                or (times and timestamp <= times[-1])
+                or (times and timestamp < times[-1])
                 or any(not math.isfinite(float(v)) for v in row)
             ):
                 raise ValueError("Invalid journal sample")
