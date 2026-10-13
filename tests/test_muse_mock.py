@@ -81,6 +81,8 @@ class AthenaMockIntegration(unittest.TestCase):
             self.assertEqual(len(saved.samples_uv), 4)
             self.assertEqual(saved.samples_uv[0], (1.0, 5.0, 9.0, 13.0))
             self.assertEqual(saved.metadata["suspected_timestamp_gaps"], 0)
+            self.assertGreaterEqual(saved.metadata["acquisition_poll_count"], 1)
+            self.assertEqual(saved.metadata["largest_acquisition_batch_samples"], 4)
             with (
                 patch("eeg_athenalyze.muse_athena._api", return_value=(FakeBoard, FakeParams, 99)),
                 patch("eeg_athenalyze.muse_athena.device_info", return_value=info),
@@ -88,3 +90,8 @@ class AthenaMockIntegration(unittest.TestCase):
                 with self.assertRaises(FileExistsError):
                     record_athena(output, AthenaSettings(duration_seconds=0.06))
             self.assertEqual(path.read_bytes(), output.read_bytes())
+
+class StallConfigurationTests(unittest.TestCase):
+    def test_reject_invalid_stall_timeout(self):
+        with self.assertRaisesRegex(ValueError, "Stall timeout"):
+            AthenaSettings(stall_timeout_seconds=0)

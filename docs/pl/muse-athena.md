@@ -22,3 +22,8 @@ Ograniczenia: końcowe tworzenie archiwum nadal wczytuje próbki do RAM, a odzys
 Ten komunikat pochodzi z lokalnego dziennika akwizycji, a nie bezpośrednio z BLE. Może oznaczać błędną liczbę kanałów, próbkę o wartości NaN/Inf lub powtarzający się albo cofający znacznik czasu BrainFlow. W najnowszej poprawce komunikat zawiera indeks próbki, poprzedni i aktualny znacznik czasu oraz różnicę. Nie należy usuwać ani przestawiać próbek automatycznie. Jeżeli transmisja została rozpoczęta, zachowaj plik `.partial.jsonl` do zbadania.
 
 Zaktualizuj lokalną gałąź, przeinstaluj pakiet poleceniem `.\\.venv\\Scripts\\python.exe -m pip install -e ".[muse]"`, wykonaj pojedynczy krótki pomiar pod **nową nazwą** i przekaż sam tekst nowego błędu, bez prywatnych identyfikatorów urządzenia.
+
+
+### Diagnostyka zaniku transmisji BLE
+
+Adapter wykrywa okres bez nowych próbek (domyślnie 10 s, podczas dłuższych sesji) i przerywa sesję z jednoznacznym błędem. Zachowuje dziennik `.partial.jsonl`, nie tworząc pozornie kompletnego archiwum. Archiwa pomyślnych pomiarów przechowują licznik odczytów bufora, pustych odczytów, maksymalny rozmiar paczki i opóźnienie otrzymania pierwszych próbek. Są to **obserwacje aplikacji**, a nie numery sekwencji pakietów BLE ani zwalidowana oś czasu sprzętu. Nie należy usuwać dziennika po nieudanym pomiarze.

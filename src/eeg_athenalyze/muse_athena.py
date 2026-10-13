@@ -23,12 +23,15 @@ class AthenaSettings:
     preset_command: str = "preset=p1041;low_latency=true"
     poll_seconds: float = 0.25
     discovery_timeout_seconds: int = 15
+    stall_timeout_seconds: float = 10.0
 
     def __post_init__(self) -> None:
         if not math.isfinite(self.duration_seconds) or self.duration_seconds <= 0:
             raise ValueError("Duration must be positive and finite")
         if not 1 <= self.discovery_timeout_seconds <= 60:
             raise ValueError("Discovery timeout must be 1 to 60 seconds")
+        if not math.isfinite(self.stall_timeout_seconds) or self.stall_timeout_seconds <= 0:
+            raise ValueError("Stall timeout must be positive and finite")
         if not 0.05 <= self.poll_seconds <= 5:
             raise ValueError("Poll period must be 0.05 to 5 seconds")
 
@@ -100,6 +103,12 @@ def record_athena(output: Path, settings: AthenaSettings | None = None) -> Path:
     if output.exists() or journal_path.exists():
         raise FileExistsError('Archive or recovery journal already exists')
     chunks_written = 0
+    poll_count = 0
+    empty_poll_count = 0
+    largest_batch = 0
+    first_sample_delay_seconds = None
+    acquisition_started = None
+    last_sample_at = None
     start_utc = datetime.now(timezone.utc).isoformat()
     try:
         try:
@@ -119,18 +128,37 @@ def record_athena(output: Path, settings: AthenaSettings | None = None) -> Path:
         prepared = True
         board.start_stream()
         started = True
+        acquisition_started = time.monotonic()
+        last_sample_at = acquisition_started
         with AcquisitionJournal(output, channel_count=len(CHANNEL_NAMES)) as journal:
             until = time.monotonic() + settings.duration_seconds
             while time.monotonic() < until:
                 time.sleep(min(settings.poll_seconds, max(0.0, until - time.monotonic())))
                 batch = board.get_board_data()
+                poll_count += 1
+                if not batch.shape[1]:
+                    empty_poll_count += 1
+                    if (settings.duration_seconds >= settings.stall_timeout_seconds
+                            and time.monotonic() - last_sample_at >= settings.stall_timeout_seconds):
+                        raise RuntimeError(
+                            f"Physical EEG stream stalled for at least "
+                            f"{settings.stall_timeout_seconds:g} s: "
+                            f"{journal.sample_count} samples received, "
+                            f"{empty_poll_count}/{poll_count} empty polls. "
+                            "Partial journal retained; do not interpret as a complete session."
+                        )
                 if batch.shape[1]:
+                    largest_batch = max(largest_batch, int(batch.shape[1]))
+                    if first_sample_delay_seconds is None:
+                        first_sample_delay_seconds = time.monotonic() - acquisition_started
+                    last_sample_at = time.monotonic()
                     journal.append(
                         batch[info["eeg_indices"], :].T,
                         batch[int(info["timestamp_channel"]), :],
                     )
             tail = board.get_board_data()
             if tail.shape[1]:
+                largest_batch = max(largest_batch, int(tail.shape[1]))
                 journal.append(
                     tail[info["eeg_indices"], :].T,
                     tail[int(info["timestamp_channel"]), :],
@@ -187,6 +215,10 @@ def record_athena(output: Path, settings: AthenaSettings | None = None) -> Path:
             "source_eeg_indices": indices,
             "source_timestamp_index": timestamp_index,
             "source_sample_count": len(source_t),
+            "acquisition_poll_count": poll_count,
+            "acquisition_empty_poll_count": empty_poll_count,
+            "largest_acquisition_batch_samples": largest_batch,
+            "first_sample_delay_seconds": first_sample_delay_seconds,
             "suspected_timestamp_gaps": suspected_gaps,
             "duplicate_source_timestamps": duplicate_timestamps,
             "largest_source_interval_seconds": largest_interval,
