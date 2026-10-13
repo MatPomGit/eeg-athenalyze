@@ -28,6 +28,9 @@ Statuses: [x] implemented in main, [ ] planned or pending verification; see [roa
 
 - [x] Add offline physical archive assessment CLI and Windows 11 hardware validation protocol (implementation only; validation still pending).
 
+- [x] Document observed Windows 11 GATT failure and add read-only FE8D/control-characteristic scanner (2026-10-13).
+- [ ] Collect actual GATT scan of MuseS-C87B and verify BrainFlow/firmware compatibility before claiming BLE acquisition validated.
+
 ## M04 PsychoPy / LSL
 - [ ] Isolated PsychoPy venv, Builder and Python API experiments.
 - [ ] EEG/marker streams and clock-domain metadata; validate timing against external ground truth.
