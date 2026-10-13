@@ -142,6 +142,7 @@ def _record_physical(arguments: argparse.Namespace) -> int:
             duration_seconds=arguments.duration,
             serial_number=arguments.serial_number,
             mac_address=arguments.mac_address,
+            discovery_timeout_seconds=arguments.discovery_timeout,
         ))
     except (OSError, RuntimeError, ValueError) as error:
         print(f"Physical Muse S Athena acquisition failed: {error}", file=sys.stderr)
@@ -229,6 +230,7 @@ def main(argv: list[str] | None = None) -> int:
     physical.add_argument("--duration", type=float, default=30.0)
     physical.add_argument("--serial-number", default="")
     physical.add_argument("--mac-address", default="")
+    physical.add_argument("--discovery-timeout", type=int, default=15)
     physical.set_defaults(handler=_record_physical)
 
     assess = device_commands.add_parser("assess", help="assess a real Muse archive")
