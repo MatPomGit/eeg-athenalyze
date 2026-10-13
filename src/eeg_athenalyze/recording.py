@@ -32,7 +32,7 @@ class Recording:
             raise ValueError("sample and timestamp counts must match")
         previous_timestamp = -math.inf
         for timestamp, row in zip(self.timestamps_seconds, self.samples_uv):
-            if not math.isfinite(timestamp) or timestamp <= previous_timestamp:
+            if not math.isfinite(timestamp) or (timestamp < previous_timestamp if self.metadata.get("data_status") == "measured" else timestamp <= previous_timestamp):
                 raise ValueError("timestamps must be finite and strictly increasing")
             if len(row) != len(self.channel_names):
                 raise ValueError("each sample must have one value per channel")
