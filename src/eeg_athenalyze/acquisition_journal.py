@@ -8,7 +8,6 @@ import json
 import math
 import os
 from pathlib import Path
-import re
 
 _JOURNAL_SUFFIX = ".partial.jsonl"
 
@@ -34,12 +33,26 @@ class AcquisitionJournal:
             raise ValueError("EEG and timestamp counts differ")
         payload = []
         last = self._last_timestamp
-        for row, value in zip(rows, times):
+        for offset, (row, value) in enumerate(zip(rows, times)):
             t = float(value)
-            if len(row) != self.channel_count or not math.isfinite(t) or t <= last:
-                raise ValueError("Invalid EEG chunk or source timestamps")
+            sample_index = self.sample_count + offset
+            if len(row) != self.channel_count:
+                raise ValueError(
+                    f"EEG channel count mismatch at sample {sample_index}: "
+                    f"expected {self.channel_count}, received {len(row)}"
+                )
+            if not math.isfinite(t):
+                raise ValueError(
+                    f"Nonfinite BrainFlow source timestamp at sample {sample_index}: {t!r}"
+                )
+            if t <= last:
+                raise ValueError(
+                    f"Non-increasing BrainFlow source timestamp at sample {sample_index}: "
+                    f"current={t:.9f}, previous={last:.9f}, delta={t-last:.9f} s. "
+                    "Samples cannot be silently sorted, dropped or retimed."
+                )
             if not all(math.isfinite(float(item)) for item in row):
-                raise ValueError("Nonfinite EEG measurement")
+                raise ValueError(f"Nonfinite EEG measurement at sample {sample_index}")
             payload.append({"timestamp": t, "channels_uv": [float(v) for v in row]})
             last = t
         if not payload:
