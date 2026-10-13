@@ -5,5 +5,10 @@ __pycache__/
 *.egg-info/
 build/
 dist/
-data/
+# Ignore recordings by default; explicitly permit two named M03 validation artifacts.
+data/*
+!data/local/
+data/local/*
+!data/local/athena-60s.eegz
+!data/local/athena-60s-qc.json
 reports/
