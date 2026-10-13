@@ -85,13 +85,19 @@ def _analyze_session(arguments: argparse.Namespace) -> int:
 
 
 def _plot_session(arguments: argparse.Namespace) -> int:
-    from eeg_athenalyze.visualization import plot_signal
+    from eeg_athenalyze.visualization import inspect_signal, plot_signal
 
     try:
-        result = plot_signal(
-            arguments.session, output=arguments.output,
-            time_axis=arguments.time_axis, max_points=arguments.max_points,
-        )
+        if arguments.view == "trace" and arguments.start == 0 and arguments.duration is None and arguments.channel is None and arguments.scale_uv is None and arguments.time_axis == "source":
+            result = plot_signal(arguments.session, output=arguments.output,
+                                 time_axis="source", max_points=arguments.max_points)
+        else:
+            if arguments.time_axis == "source":
+                raise ValueError("Source timestamps are supported only for the unfiltered trace view")
+            result = inspect_signal(arguments.session, output=arguments.output,
+                                    view=arguments.view, channel=arguments.channel,
+                                    start=arguments.start, duration=arguments.duration,
+                                    scale_uv=arguments.scale_uv, max_points=arguments.max_points)
     except (OSError, ValueError, RuntimeError) as error:
         print(f"EEG plot failed: {error}", file=sys.stderr)
         return 1
@@ -224,6 +230,11 @@ def main(argv: list[str] | None = None) -> int:
     plot.add_argument("--output", type=Path, help="save .png, .svg or .pdf instead of showing a window")
     plot.add_argument("--time-axis", choices=("samples", "source"), default="samples")
     plot.add_argument("--max-points", type=int, default=8000)
+    plot.add_argument("--view", choices=("trace", "psd", "spectrogram", "all"), default="trace")
+    plot.add_argument("--channel", help="Select one channel, e.g. AF7")
+    plot.add_argument("--start", type=float, default=0.0, help="Start time in nominal seconds")
+    plot.add_argument("--duration", type=float, help="Selected duration in nominal seconds")
+    plot.add_argument("--scale-uv", type=float, help="Symmetric amplitude limit in microvolts")
     plot.set_defaults(handler=_plot_session)
 
     bids = subcommands.add_parser("bids", help="EEG-BIDS export and validation")
