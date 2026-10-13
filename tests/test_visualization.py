@@ -31,8 +31,8 @@ class VisualizationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             journal = Path(directory) / "trial.eegz.partial.jsonl"
             journal.write_text(
-                '{"timestamp":12.0,"channels_uv":[1,2,3,4]}\\n'
-                '{"timestamp":12.0,"channels_uv":[5,6,7,8]}\\n'
+                '{"timestamp":12.0,"channels_uv":[1,2,3,4]}\n'
+                '{"timestamp":12.0,"channels_uv":[5,6,7,8]}\n'
                 '{"timestamp":',
                 encoding="utf-8",
             )
