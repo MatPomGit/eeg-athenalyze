@@ -65,6 +65,20 @@ def device_info() -> dict[str, object]:
     }
 
 
+def validate_sample_coverage(sample_count: int, requested_seconds: float, nominal_rate_hz: float) -> None:
+    """Fail closed on grossly incomplete physical recording; keep journal."""
+    if requested_seconds < 5:
+        return  # Tiny mock/diagnostic captures are not subject to full-session QC.
+    minimum = math.floor(requested_seconds * nominal_rate_hz * 0.8)
+    if sample_count < minimum:
+        raise RuntimeError(
+            f"Incomplete physical EEG session: received {sample_count} samples, "
+            f"expected approximately {requested_seconds * nominal_rate_hz:.0f} "
+            f"({nominal_rate_hz:g} Hz for {requested_seconds:g} s). "
+            "Recovery journal retained; no finalized EEG archive was written."
+        )
+
+
 def record_athena(output: Path, settings: AthenaSettings | None = None) -> Path:
     """Acquire physical EEG and persist source timestamps without interpolation.
 
@@ -134,6 +148,7 @@ def record_athena(output: Path, settings: AthenaSettings | None = None) -> Path:
 
     if not chunks_written:
         raise RuntimeError("Muse S Athena returned no EEG samples; journal retained")
+    validate_sample_coverage(chunks_written, settings.duration_seconds, float(info["sampling_rate_hz"]))
     import numpy as np
 
     rows, times = recover_journal(journal_path, channel_count=len(CHANNEL_NAMES))

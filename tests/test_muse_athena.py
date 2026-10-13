@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from eeg_athenalyze.muse_athena import AthenaSettings, record_athena
+from eeg_athenalyze.muse_athena import AthenaSettings, record_athena, validate_sample_coverage
 
 
 class AthenaTests(unittest.TestCase):
@@ -19,3 +19,14 @@ class AthenaTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "no board"):
                     record_athena(destination, AthenaSettings(duration_seconds=0.1))
                 self.assertFalse(destination.exists())
+
+class PhysicalCompletenessTests(unittest.TestCase):
+    def test_short_disconnect_is_rejected(self):
+        with self.assertRaisesRegex(RuntimeError, "Incomplete physical EEG session"):
+            validate_sample_coverage(96, 60.0, 256.0)
+
+    def test_full_sixty_second_session_passes(self):
+        validate_sample_coverage(15520, 60.0, 256.0)
+
+    def test_short_mock_diagnostic_is_not_rejected(self):
+        validate_sample_coverage(4, 0.05, 256.0)
