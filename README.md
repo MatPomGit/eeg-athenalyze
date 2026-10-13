@@ -77,6 +77,8 @@ Use the isolated Python environment and install the optional BrainFlow adapter:
 .\.venv\Scripts\python.exe -m pip install ".[muse]"
 .\.venv\Scripts\python.exe -m eeg_athenalyze devices check --device muse-athena
 .\.venv\Scripts\python.exe -m eeg_athenalyze record --device muse-athena --duration 30 --output data\local\physical-session.eegz
+.\.venv\Scripts\python.exe -m eeg_athenalyze record --device muse-athena --duration 60 --output data\local\closed-eyes.eegz
+.\.venv\Scripts\python.exe -m eeg_athenalyze record --device muse-athena --duration 60 --output data\local\open-eyes.eegz
 ```
 
 This is a **physical recording path**, never a simulated fallback. The code has not yet been tested with an actual Muse S Athena; do not use it for research data until the hardware validation checklist passes. See [English guide](docs/en/muse-athena.md), [polska instrukcja](docs/pl/muse-athena.md), and [TODO](TODO.md).
