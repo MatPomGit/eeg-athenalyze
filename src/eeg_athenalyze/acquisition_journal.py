@@ -45,9 +45,9 @@ class AcquisitionJournal:
                 raise ValueError(
                     f"Nonfinite BrainFlow source timestamp at sample {sample_index}: {t!r}"
                 )
-            if t <= last:
+            if t < last:
                 raise ValueError(
-                    f"Non-increasing BrainFlow source timestamp at sample {sample_index}: "
+                    f"Decreasing BrainFlow source timestamp at sample {sample_index}: "
                     f"current={t:.9f}, previous={last:.9f}, delta={t-last:.9f} s. "
                     "Samples cannot be silently sorted, dropped or retimed."
                 )
@@ -95,7 +95,7 @@ def recover_journal(path: Path, *, channel_count: int) -> tuple[list[list[float]
             if (
                 len(row) != channel_count
                 or not math.isfinite(timestamp)
-                or (times and timestamp <= times[-1])
+                or (times and timestamp < times[-1])
                 or any(not math.isfinite(float(v)) for v in row)
             ):
                 raise ValueError("Invalid journal sample")
