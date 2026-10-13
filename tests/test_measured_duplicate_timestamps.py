@@ -33,7 +33,9 @@ class DuplicateTimestampTests(unittest.TestCase):
                 metadata={"data_status": "measured", "duplicate_source_timestamps": 1},
             )
             save_recording(recording, source)
-            self.assertEqual(load_recording(source).timestamps_seconds, (0., 0., .004))
+            actual = load_recording(source).timestamps_seconds
+            self.assertEqual(actual[:2], (0.0, 0.0))
+            self.assertAlmostEqual(actual[2], 0.004, places=9)
 
     def test_synthetic_duplicate_is_not_permitted(self):
         with self.assertRaises(ValueError):
