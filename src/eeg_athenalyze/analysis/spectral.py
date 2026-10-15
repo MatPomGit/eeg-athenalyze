@@ -124,6 +124,20 @@ def compare_resting_alpha(
     """
     if not math.isfinite(max_gap_factor) or max_gap_factor <= 1:
         raise ValueError("max_gap_factor must be finite and greater than 1")
+    if (
+        not math.isfinite(low_hz)
+        or not math.isfinite(high_hz)
+        or low_hz < 0
+        or high_hz <= low_hz
+        or high_hz > recording.sample_rate_hz / 2
+    ):
+        raise ValueError("alpha band must be finite and within the Nyquist range")
+    # Require at least 1 Hz true frequency resolution, or finer for
+    # narrower-than-1-Hz bands. Zero-padding alone does not add resolution.
+    minimum_run_samples = max(
+        8,
+        math.ceil(recording.sample_rate_hz * max(1.0, 1.0 / (high_hz - low_hz))),
+    )
     events = recording.metadata.get("events")
     if not isinstance(events, list):
         raise ValueError("recording does not contain experiment event metadata")
@@ -178,11 +192,17 @@ def compare_resting_alpha(
             for index in range(start + 1, stop):
                 gap = recording.timestamps_seconds[index] - recording.timestamps_seconds[index - 1]
                 if gap <= 0 or gap > maximum_gap:
-                    if index - run_start >= 8:
+                    if index - run_start >= minimum_run_samples:
                         runs.append((run_start, index))
                     run_start = index
-            if stop - run_start >= 8:
+            if stop - run_start >= minimum_run_samples:
                 runs.append((run_start, stop))
+        if not runs:
+            raise ValueError(
+                f"recording has insufficient contiguous samples for {condition}; "
+                f"requires at least {minimum_run_samples} samples per Welch run "
+                "for the selected frequency band"
+            )
         for channel_index, channel_name in enumerate(recording.channel_names):
             estimates = []
             for run_start, run_stop in runs:
