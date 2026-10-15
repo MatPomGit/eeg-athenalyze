@@ -21,7 +21,10 @@ class SpectralAnalysisTests(unittest.TestCase):
     def test_measured_events_use_timestamp_clock(self):
         rate = 64
         times = tuple(10 + i / rate for i in range(256))
-        samples = tuple((math.sin(2 * math.pi * 10 * i / rate),) for i in range(256))
+        samples = tuple(
+            ((1.0 if i < 128 else 2.0) * math.sin(2 * math.pi * 10 * i / rate),)
+            for i in range(256)
+        )
         rec = Recording("test", rate, ("Cz",), samples, times, {
             "data_status": "measured",
             "events": [
@@ -30,8 +33,8 @@ class SpectralAnalysisTests(unittest.TestCase):
             ],
         })
         result = compare_resting_alpha(rec)
-        self.assertGreater(result.eyes_open_uv2["Cz"], 0)
-        self.assertGreater(result.eyes_closed_uv2["Cz"], 0)
+        self.assertAlmostEqual(result.eyes_open_uv2["Cz"], 0.5, delta=0.02)
+        self.assertAlmostEqual(result.eyes_closed_uv2["Cz"], 2.0, delta=0.02)
 
     def test_measured_long_gap_rejects_short_runs(self):
         rate = 64
