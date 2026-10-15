@@ -31,3 +31,10 @@ This is **EEG Neurolyze** (`MatPomGit/eeg-neurolyze`). The existing Python distr
 
 ## Near-term priority
 Finish M02: MNE-BIDS BrainVision export of synthetic EO/EC archives, compliant event/channel metadata, official validator and read-back checks. Keep the hardware acquisition and PsychoPy integration in bounded separate PRs.
+
+## GitHub Actions: reguły dla agentów AI
+
+- Stosuj domyślnie `workflow_dispatch` **wyłącznie na gałęzi `main`**. Nie uruchamiaj testów Actions dla PR lub gałęzi roboczych; sprawdzaj je lokalnie.
+- Automatyczne wywołanie dopuszczalne jest tylko dla niezbędnego procesu po `push` na `main`, z wąskim `paths` i warunkiem jobu `github.ref == 'refs/heads/main'`; nie przywracaj automatycznych CI bez zgody.
+- Unikaj kosztownych testów sprzętowych EEG/Muse na zewnętrznym runnerze i nie deklaruj testu rzeczywistego urządzenia, jeśli wykonano wyłącznie mock.
+- Żaden agent nie może omijać polityki przez tagi, PR, `workflow_run`, `repository_dispatch` czy `always()`. Ręczny wybór innej gałęzi może utworzyć pominięte wykonanie; używaj tylko `main`.

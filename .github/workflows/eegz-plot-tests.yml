@@ -1,24 +1,11 @@
 name: EEGZ plot tests
 
 on:
-  pull_request:
-    paths:
-      - "src/eeg_athenalyze/visualization.py"
-      - "src/eeg_athenalyze/cli.py"
-      - "tests/test_visualization.py"
-      - "pyproject.toml"
-      - ".github/workflows/eegz-plot-tests.yml"
-  push:
-    branches: [main]
-    paths:
-      - "src/eeg_athenalyze/visualization.py"
-      - "src/eeg_athenalyze/cli.py"
-      - "tests/test_visualization.py"
-      - "pyproject.toml"
-      - ".github/workflows/eegz-plot-tests.yml"
+  workflow_dispatch:
 
 jobs:
   render:
+    if: ${{ github.ref == 'refs/heads/main' }}
     strategy:
       fail-fast: false
       matrix:

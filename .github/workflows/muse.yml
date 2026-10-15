@@ -1,17 +1,12 @@
 name: Muse Athena adapter tests
 on:
-  pull_request:
-    paths:
-      - "src/eeg_athenalyze/muse_athena.py"
-      - "src/eeg_athenalyze/cli.py"
-      - "tests/test_muse*.py"
-      - "pyproject.toml"
-      - ".github/workflows/muse.yml"
   workflow_dispatch:
+
 permissions:
   contents: read
 jobs:
   mock-hardware:
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

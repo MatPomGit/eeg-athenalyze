@@ -1,18 +1,12 @@
 name: EEG-BIDS integration
 on:
-  pull_request:
-    paths:
-      - "src/**"
-      - "tests/test_bids.py"
-      - "tests/test_derivatives.py"
-      - "src/eeg_athenalyze/derivatives.py"
-      - "pyproject.toml"
-      - ".github/workflows/bids.yml"
   workflow_dispatch:
+
 permissions:
   contents: read
 jobs:
   bids:
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

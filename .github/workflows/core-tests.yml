@@ -1,24 +1,12 @@
 name: Core tests
 on:
-  push:
-    branches: [main]
-    paths:
-      - "src/**"
-      - "tests/**"
-      - "pyproject.toml"
-      - "windows/**"
-      - ".github/workflows/core-tests.yml"
-  pull_request:
-    paths:
-      - "src/**"
-      - "tests/**"
-      - "pyproject.toml"
-      - "windows/**"
-      - ".github/workflows/core-tests.yml"
+  workflow_dispatch:
+
 permissions:
   contents: read
 jobs:
   smoke:
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
