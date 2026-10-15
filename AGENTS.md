@@ -38,3 +38,12 @@ Finish M02: MNE-BIDS BrainVision export of synthetic EO/EC archives, compliant e
 - Automatyczne wywołanie dopuszczalne jest tylko dla niezbędnego procesu po `push` na `main`, z wąskim `paths` i warunkiem jobu `github.ref == 'refs/heads/main'`; nie przywracaj automatycznych CI bez zgody.
 - Unikaj kosztownych testów sprzętowych EEG/Muse na zewnętrznym runnerze i nie deklaruj testu rzeczywistego urządzenia, jeśli wykonano wyłącznie mock.
 - Żaden agent nie może omijać polityki przez tagi, PR, `workflow_run`, `repository_dispatch` czy `always()`. Ręczny wybór innej gałęzi może utworzyć pominięte wykonanie; używaj tylko `main`.
+
+## GitHub Actions execution policy (mandatory for AI agents)
+
+1. **Manual by default.** Use `workflow_dispatch` for costly CI, model training, publications, Android builds, manuscript compilation, GPU jobs, benchmarks and research experiments. Do not add automatic runs unless explicitly justified.
+2. Automatic workflows, where necessary, may run only on `push` to `main`, with `branches: [main]` and narrow `paths` filters where possible. Never use `pull_request`, `pull_request_target`, `merge_group`, or feature-branch push triggers.
+3. Every job must have an effective `github.ref == 'refs/heads/main'` condition, including manual jobs. Retain all current approval inputs, disabled gates, permissions, runner labels, concurrency and secrets.
+4. Preserve essential scheduled backups, critical service monitoring and scheduled maintenance after checking their purpose. They operate on the default `main` branch; do not silently disable them.
+5. Run tests locally on development branches; GitHub Actions verification happens on `main`. Agents must not trigger Actions on feature branches. GitHub may record a skipped manual run, and old branch copies of workflows may not carry the new guards.
+6. Before introducing or changing a workflow, inventory existing YAML files, verify triggers and job guards, and document any automatic-run exception. Check branch protection requirements when removing PR checks. Never claim successful CI without inspecting the real run.
