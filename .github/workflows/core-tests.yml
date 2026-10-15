@@ -1,12 +1,14 @@
 name: Core tests
 on:
+  pull_request:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 jobs:
   smoke:
-    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
