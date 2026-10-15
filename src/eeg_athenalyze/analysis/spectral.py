@@ -176,7 +176,17 @@ def compare_resting_alpha(
                     recording.sample_rate_hz,
                     segment_seconds=segment_seconds,
                 )
-                estimates.append((band_power(spectrum, low_hz, high_hz), run_stop - run_start))
+                run_length = run_stop - run_start
+                segment_length = min(
+                    run_length,
+                    max(8, round(segment_seconds * recording.sample_rate_hz)),
+                )
+                segment_count = 1 + (
+                    run_length - segment_length
+                ) // max(1, segment_length // 2)
+                estimates.append(
+                    (band_power(spectrum, low_hz, high_hz), segment_count)
+                )
             if not estimates:
                 raise ValueError(f"recording has insufficient contiguous samples for {condition}")
             powers[condition][channel_name] = sum(value * count for value, count in estimates) / sum(count for _, count in estimates)
