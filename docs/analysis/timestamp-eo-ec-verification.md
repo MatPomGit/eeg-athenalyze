@@ -15,16 +15,33 @@ Related: #21, #22, #28.
 5. Make gap tolerance configurable relative to expected sample period, document its units and provide a deterministic default. Do not infer that duplicate timestamps imply independent time samples.
 6. For adjacent frequency bands use half-open intervals `[low, high)` except an explicitly documented terminal Nyquist edge. Preserve or version existing alpha-band behavior deliberately; never change numerical semantics without regression tests.
 
+## Implemented minimum spectral-resolution gate
+
+For measured event segments, the analyser only accepts contiguous runs of
+at least `ceil(sample_rate_hz * max(1.0, 1.0 / band_width_hz))` samples
+(minimum eight). This guarantees an unpadded time-window resolution no worse
+than 1 Hz and no worse than the requested band width; zero-padding does not
+satisfy the minimum duration. Runs shorter than the threshold are discarded,
+and an event with no qualifying runs raises `ValueError` rather than
+returning a misleading zero. Simulated uniform-clock archives retain their
+legacy sample-index behavior. Usable measured runs are aggregated by actual
+contributing Welch-window counts (not by their raw sample counts).
+
+The default `max_gap_factor=1.5` allows consecutive timestamps separated
+by at most 1.5 nominal sample periods. Duplicate timestamps and longer gaps
+split runs. The coverage convention ends one nominal sample period after the
+final measured timestamp.
+
 ## Regression test matrix
 
 - Uniform 256 Hz synthetic EO/EC fixture: backward-compatible values.
 - Measured timestamps with a fixed offset: correct event sample selection.
 - Clock drift, jitter and duplicate timestamps: no index-based misalignment.
 - Missing packet and long gap inside a condition: Welch windows never span the gap.
-- Gap leaves fewer than eight samples: explicit error, not plausible-looking alpha power.
+- Gap leaves fewer than eight samples, or leaves runs too short to resolve 8–13 Hz: explicit error, not plausible-looking alpha power.
 - Empty event, negative duration, nonfinite timestamps, out-of-range event, mismatched array lengths: explicit errors.
 - Two adjacent bands sharing a boundary: no double-counted edge bin.
-- Windows and Ubuntu CI: same deterministic outputs within a declared numerical tolerance.
+- Windows and Ubuntu CI: same deterministic results; alpha regressions use explicit tolerances (0.02 and 0.04 µV²).
 
 ## Acceptance evidence
 
