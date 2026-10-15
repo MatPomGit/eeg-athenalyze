@@ -36,14 +36,46 @@ class SpectralAnalysisTests(unittest.TestCase):
         self.assertAlmostEqual(result.eyes_open_uv2["Cz"], 0.5, delta=0.02)
         self.assertAlmostEqual(result.eyes_closed_uv2["Cz"], 2.0, delta=0.02)
 
+    def test_measured_events_outside_timestamp_coverage_are_rejected(self):
+        rate = 64
+        times = tuple(10 + i / rate for i in range(256))
+        rec = Recording("test", rate, ("Cz",), tuple((1.0,) for _ in times), times, {
+            "data_status": "measured",
+            "events": [
+                {"condition": "eyes_open", "onset_seconds": 10, "duration_seconds": 2},
+                {"condition": "eyes_closed", "onset_seconds": 12, "duration_seconds": 2},
+            ],
+        })
+        for onset, duration in ((9.9, 0.2), (13.9, 0.2)):
+            with self.subTest(onset=onset):
+                events = [
+                    {
+                        "condition": "eyes_open",
+                        "onset_seconds": onset,
+                        "duration_seconds": duration,
+                    },
+                    {
+                        "condition": "eyes_closed",
+                        "onset_seconds": 10,
+                        "duration_seconds": 2,
+                    },
+                ]
+                outside_coverage = replace(
+                    rec, metadata={**rec.metadata, "events": events}
+                )
+                with self.assertRaisesRegex(
+                    ValueError, "outside measured recording coverage"
+                ):
+                    compare_resting_alpha(outside_coverage)
+
     def test_measured_long_gap_rejects_short_runs(self):
         rate = 64
         times = tuple([i / rate for i in range(7)] + [1 + i / rate for i in range(7)])
         rec = Recording("gap", rate, ("Cz",), tuple((1.0,) for _ in times), times, {
             "data_status": "measured",
             "events": [
-                {"condition": "eyes_open", "onset_seconds": 0, "duration_seconds": 2},
-                {"condition": "eyes_closed", "onset_seconds": 0, "duration_seconds": 2},
+                {"condition": "eyes_open", "onset_seconds": 0, "duration_seconds": 1 + 7 / rate},
+                {"condition": "eyes_closed", "onset_seconds": 0, "duration_seconds": 1 + 7 / rate},
             ],
         })
         with self.assertRaisesRegex(ValueError, "insufficient contiguous"):

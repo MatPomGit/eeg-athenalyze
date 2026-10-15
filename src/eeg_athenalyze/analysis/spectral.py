@@ -117,7 +117,11 @@ def compare_resting_alpha(
     segment_seconds: float = 2.0,
     max_gap_factor: float = 1.5,
 ) -> AlphaComparison:
-    """Compare per-channel alpha power in EO/EC event segments."""
+    """Compare per-channel alpha power in EO/EC event segments.
+
+    Measured timestamp coverage is half-open: the first timestamp through one
+    nominal sample period after the last timestamp.
+    """
     if not math.isfinite(max_gap_factor) or max_gap_factor <= 1:
         raise ValueError("max_gap_factor must be finite and greater than 1")
     events = recording.metadata.get("events")
@@ -146,9 +150,20 @@ def compare_resting_alpha(
         ):
             raise ValueError(f"recording has invalid {condition} event timing")
         measured = recording.metadata.get("data_status") == "measured"
+        event_end = onset + duration
+        if measured:
+            timestamps = recording.timestamps_seconds
+            if (
+                not timestamps
+                or onset < timestamps[0]
+                or event_end > timestamps[-1] + 1 / recording.sample_rate_hz
+            ):
+                raise ValueError(
+                    f"{condition} event falls outside measured recording coverage"
+                )
         start = (bisect_left(recording.timestamps_seconds, onset) if measured
                  else round(onset * recording.sample_rate_hz))
-        stop = (bisect_left(recording.timestamps_seconds, onset + duration)
+        stop = (bisect_left(recording.timestamps_seconds, event_end)
                 if measured else min(len(recording.samples_uv),
                                      start + round(duration * recording.sample_rate_hz)))
         condition_samples = recording.samples_uv[start:stop]
