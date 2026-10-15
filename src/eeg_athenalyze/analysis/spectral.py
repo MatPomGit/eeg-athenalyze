@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from bisect import bisect_left
 import math
 from typing import Sequence
 
@@ -114,8 +115,11 @@ def compare_resting_alpha(
     low_hz: float = 8.0,
     high_hz: float = 13.0,
     segment_seconds: float = 2.0,
+    max_gap_factor: float = 1.5,
 ) -> AlphaComparison:
     """Compare per-channel alpha power in EO/EC event segments."""
+    if not math.isfinite(max_gap_factor) or max_gap_factor <= 1:
+        raise ValueError("max_gap_factor must be finite and greater than 1")
     events = recording.metadata.get("events")
     if not isinstance(events, list):
         raise ValueError("recording does not contain experiment event metadata")
@@ -136,27 +140,46 @@ def compare_resting_alpha(
         if (
             not isinstance(onset, (int, float))
             or not isinstance(duration, (int, float))
+            or not math.isfinite(onset)
+            or not math.isfinite(duration)
             or duration <= 0
         ):
             raise ValueError(f"recording has invalid {condition} event timing")
-        start = round(onset * recording.sample_rate_hz)
-        stop = min(
-            len(recording.samples_uv),
-            start + round(duration * recording.sample_rate_hz),
-        )
+        measured = recording.metadata.get("data_status") == "measured"
+        start = (bisect_left(recording.timestamps_seconds, onset) if measured
+                 else round(onset * recording.sample_rate_hz))
+        stop = (bisect_left(recording.timestamps_seconds, onset + duration)
+                if measured else min(len(recording.samples_uv),
+                                     start + round(duration * recording.sample_rate_hz)))
         condition_samples = recording.samples_uv[start:stop]
         if len(condition_samples) < 8:
             raise ValueError(f"recording has too few samples for {condition}")
         powers[condition] = {}
+        runs = [(start, stop)]
+        if measured:
+            runs = []
+            run_start = start
+            maximum_gap = max_gap_factor / recording.sample_rate_hz
+            for index in range(start + 1, stop):
+                gap = recording.timestamps_seconds[index] - recording.timestamps_seconds[index - 1]
+                if gap <= 0 or gap > maximum_gap:
+                    if index - run_start >= 8:
+                        runs.append((run_start, index))
+                    run_start = index
+            if stop - run_start >= 8:
+                runs.append((run_start, stop))
         for channel_index, channel_name in enumerate(recording.channel_names):
-            spectrum = welch_psd(
-                [row[channel_index] for row in condition_samples],
-                recording.sample_rate_hz,
-                segment_seconds=segment_seconds,
-            )
-            powers[condition][channel_name] = band_power(
-                spectrum, low_hz, high_hz
-            )
+            estimates = []
+            for run_start, run_stop in runs:
+                spectrum = welch_psd(
+                    [row[channel_index] for row in recording.samples_uv[run_start:run_stop]],
+                    recording.sample_rate_hz,
+                    segment_seconds=segment_seconds,
+                )
+                estimates.append((band_power(spectrum, low_hz, high_hz), run_stop - run_start))
+            if not estimates:
+                raise ValueError(f"recording has insufficient contiguous samples for {condition}")
+            powers[condition][channel_name] = sum(value * count for value, count in estimates) / sum(count for _, count in estimates)
     return AlphaComparison(
         eyes_open_uv2=powers["eyes_open"],
         eyes_closed_uv2=powers["eyes_closed"],
