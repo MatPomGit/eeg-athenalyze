@@ -5,7 +5,4 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Include="vendor/AthenaDecoders.cs" Link="AthenaDecoders.cs" />
-  </ItemGroup>
 </Project>
