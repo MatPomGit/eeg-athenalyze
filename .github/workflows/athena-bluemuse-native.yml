@@ -1,0 +1,37 @@
+name: Athena pinned BlueMuse native decoder
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'tests/native/bluemuse/**'
+      - '.github/workflows/athena-bluemuse-native.yml'
+jobs:
+  bluemuse-original-csharp:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+      - name: Checkout source-pinned BlueMuse
+        uses: actions/checkout@v4
+        with:
+          repository: kowalej/BlueMuse
+          ref: 4b0a307d660b4c5490078dcb1188396cf066f0e1
+          path: upstream-bluemuse
+          persist-credentials: false
+      - name: Capture immutable source identity and copy original C# decoder
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C upstream-bluemuse rev-parse HEAD)" = 4b0a307d660b4c5490078dcb1188396cf066f0e1
+          mkdir -p tests/native/bluemuse/vendor
+          cp upstream-bluemuse/BlueMuse.App/Athena/AthenaDecoders.cs tests/native/bluemuse/vendor/AthenaDecoders.cs
+          sha256sum tests/native/bluemuse/vendor/AthenaDecoders.cs
+          git -C upstream-bluemuse rev-parse HEAD
+      - name: Set up .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Compile and execute UNMODIFIED upstream DecodeEEG
+        run: dotnet run --project tests/native/bluemuse/BlueMuseNativeEEG.csproj --configuration Release
