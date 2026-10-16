@@ -28,6 +28,10 @@ def summarize_notification_journal(source: Path) -> dict[str, object]:
     tags: Counter[str] = Counter()
     by_characteristic: Counter[str] = Counter()
     primary_indices: list[int] = []
+    primary_frame_count = 0
+    eeg_tag_count = 0
+    nominal_eeg_sample_positions = 0
+    primary_by_characteristic: Counter[str] = Counter()
     prev_time = None
     longest_host_gap = 0.0
     first_time = last_time = None
@@ -70,19 +74,30 @@ def summarize_notification_journal(source: Path) -> dict[str, object]:
                 invalid += 1
                 continue
             valid += 1
+            # Read primary boundaries separately: a notification may contain
+            # multiple primary frames, and each may contain subpackets.
+            offset = 0
+            while offset < len(raw):
+                frame_length = raw[offset]
+                # parse_notification already validated complete framing.
+                primary_frame_count += 1
+                primary_by_characteristic[characteristic] += 1
+                primary_indices.append(int.from_bytes(raw[offset + 1:offset + 3], "little"))
+                offset += frame_length
+            eeg_tag_count += sum(p.tag in (0x11, 0x12) for p in parsed)
+            nominal_eeg_sample_positions += sum(4 if p.tag == 0x11 else 2 if p.tag == 0x12 else 0 for p in parsed)
             tags.update(f"0x{packet.tag:02x}" for packet in parsed)
-            # One index per decoded *primary* frame; subpacket indices differ.
-            # Without a verified frame-offset table, primary boundaries are
-            # not recoverable from the flattened packet list: deduplicate by
-            # the pair (packet_index, contiguous packet group) conservatively.
-            indices = [p.packet_index for p in parsed]
-            primary_indices.append(indices[0])
     return {
         "schema_version": 1, "data_source": "offline_user_supplied_raw_ble",
         "hardware_timing_verified": False, "packet_loss_estimate": None,
         "notification_count": total, "parsed_notification_count": valid,
         "invalid_notification_count": invalid,
         "tags": dict(sorted(tags.items())),
+        "primary_frame_count": primary_frame_count,
+        "primary_frames_by_characteristic": dict(sorted(primary_by_characteristic.items())),
+        "eeg_tag_count": eeg_tag_count,
+        "nominal_eeg_sample_positions": nominal_eeg_sample_positions,
+        "adjacent_repeated_primary_indices": sum(a == b for a, b in zip(primary_indices, primary_indices[1:])),
         "characteristic_notifications": dict(sorted(by_characteristic.items())),
         "first_host_monotonic_seconds": first_time,
         "last_host_monotonic_seconds": last_time,
