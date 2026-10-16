@@ -37,7 +37,7 @@ async def collect(
     Dependency injection supports isolated mock tests without OS BLE or hardware.
     Do not run while BrainFlow, Muse apps or OpenMuse own the headset.
     """
-    if not name.strip():
+    if not isinstance(name, str) or not name.strip():
         raise ValueError("Explicit device name required")
     if not math.isfinite(duration) or duration <= 0:
         raise ValueError("Duration must be positive and finite")
@@ -92,11 +92,13 @@ async def collect(
 
             subscribed = []
             started = False
+            stream_command_attempted = False
             try:
                 for uuid in characteristics:
                     await client.start_notify(uuid, on_data)
                     subscribed.append(uuid)
                 if start_stream:
+                    stream_command_attempted = True
                     for cmd in ("v6", "s", "h", preset, "s", "dc001", "dc001"):
                         await client.write_gatt_char(CONTROL_UUID, frame_control_command(cmd), response=True)
                     if low_latency:
@@ -106,7 +108,7 @@ async def collect(
                 if not client.is_connected:
                     raise RuntimeError("BLE disconnected during capture; partial JSONL retained")
             finally:
-                if started and client.is_connected:
+                if stream_command_attempted and client.is_connected:
                     try:
                         await client.write_gatt_char(CONTROL_UUID, frame_control_command("h"), response=True)
                     except Exception:
