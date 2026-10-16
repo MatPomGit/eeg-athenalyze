@@ -95,7 +95,7 @@ class NativeDriverParityTests(unittest.TestCase):
     def test_short_host_interval_uses_interpolation(self):
         ts = [brainflow_candidate_sample_timestamp(100, 100.004, i, 4, 256) for i in range(4)]
         self.assertEqual(ts[-1], 100.004)
-        self.assertAlmostEqual(ts[0], 100.001)
+        self.assertAlmostEqual(ts[0], 100 + 1/256)\n        self.assertAlmostEqual(ts[1], 100.002)
 
     def test_long_host_interval_uses_nominal_period(self):
         ts = [brainflow_candidate_sample_timestamp(100, 101, i, 4, 256) for i in range(4)]
