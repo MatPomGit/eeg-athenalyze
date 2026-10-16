@@ -156,7 +156,7 @@ def _device_check(arguments: argparse.Namespace) -> int:
 
 
 def _record_physical(arguments: argparse.Namespace) -> int:
-    from eeg_athenalyze.muse_athena import AthenaSettings, record_athena
+    from eeg_athenalyze.muse_athena import AthenaSettings, record_athena, make_preset_command
 
     try:
         output = record_athena(arguments.output, AthenaSettings(
@@ -164,6 +164,7 @@ def _record_physical(arguments: argparse.Namespace) -> int:
             serial_number=arguments.serial_number,
             mac_address=arguments.mac_address,
             discovery_timeout_seconds=arguments.discovery_timeout,
+            preset_command=make_preset_command(arguments.preset, arguments.low_latency),
         ))
     except (OSError, RuntimeError, ValueError) as error:
         print(f"Physical Muse S Athena acquisition failed: {error}", file=sys.stderr)
@@ -264,6 +265,8 @@ def main(argv: list[str] | None = None) -> int:
     physical.add_argument("--serial-number", default="")
     physical.add_argument("--mac-address", default="")
     physical.add_argument("--discovery-timeout", type=int, default=15)
+    physical.add_argument("--preset", choices=("p21", "p1035", "p1041"), default="p1041")
+    physical.add_argument("--low-latency", action=argparse.BooleanOptionalAction, default=True)
     physical.set_defaults(handler=_record_physical)
 
     assess = device_commands.add_parser("assess", help="assess a real Muse archive")
