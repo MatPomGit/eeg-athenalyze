@@ -90,9 +90,8 @@ class RawCollectorTests(unittest.TestCase):
             p = Path(folder) / "raw.jsonl"
             for overrides in ({"duration": 0}, {"preset": "p999"}, {"name": ""}):
                 with self.subTest(overrides=overrides), self.assertRaises(ValueError):
-                    asyncio.run(collect(p, name="MuseS-TEST", duration=1,
-                                        bleak_client=Client, bleak_scanner=Scanner,
-                                        **overrides))
+                    asyncio.run(collect(p, bleak_client=Client, bleak_scanner=Scanner,
+                                        **({"name":"MuseS-TEST","duration":1} | overrides)))
             self.assertFalse(p.exists())
 
 
