@@ -94,6 +94,52 @@ class RawCollectorTests(unittest.TestCase):
                                         **({"name":"MuseS-TEST","duration":1} | overrides)))
             self.assertFalse(p.exists())
 
+class PartialStartFailureClient(Client):
+    last_instance = None
+    def __init__(self, device, timeout):
+        super().__init__(device, timeout)
+        self.__class__.last_instance = self
+
+    async def write_gatt_char(self, uuid, data, response):
+        self.commands.append(data)
+        if data == frame_control_command("p21"):
+            raise RuntimeError("mock preset write failure")
+
+
+class DisconnectClient(Client):
+    last_instance = None
+    def __init__(self, device, timeout):
+        super().__init__(device, timeout)
+        self.__class__.last_instance = self
+
+    async def start_notify(self, uuid, callback):
+        await super().start_notify(uuid, callback)
+        self.is_connected = False
+
+
+class CollectorLifecycleTests(unittest.TestCase):
+    def test_partial_command_failure_attempts_halt_and_retains_raw_file(self):
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder) / "partial.jsonl"
+            with self.assertRaisesRegex(RuntimeError, "mock preset"):
+                asyncio.run(collect(output, name="MuseS-TEST", duration=0.001,
+                                    bleak_client=PartialStartFailureClient,
+                                    bleak_scanner=Scanner, start_stream=True))
+            client = PartialStartFailureClient.last_instance
+            self.assertEqual(client.commands[-1], frame_control_command("h"))
+            self.assertEqual(client.stopped, [SENSOR_SUFFIXES[0]])
+            self.assertTrue(output.exists())
+
+    def test_disconnected_session_preserves_partial_capture(self):
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder) / "disconnect.jsonl"
+            with self.assertRaisesRegex(RuntimeError, "disconnected"):
+                asyncio.run(collect(output, name="MuseS-TEST", duration=0.001,
+                                    bleak_client=DisconnectClient, bleak_scanner=Scanner))
+            self.assertTrue(output.exists())
+            self.assertGreater(output.stat().st_size, 0)
+            self.assertEqual(DisconnectClient.last_instance.stopped, [])
+
 
 if __name__ == "__main__":
     unittest.main()
