@@ -13,6 +13,15 @@ from eeg_athenalyze.acquisition_journal import AcquisitionJournal, recover_journ
 from eeg_athenalyze.recording import Recording
 
 CHANNEL_NAMES = ("TP9", "AF7", "AF8", "TP10")
+SUPPORTED_PRESETS = ("p21", "p1035", "p1041")
+
+
+def make_preset_command(preset: str, low_latency: bool) -> str:
+    """Construct an allowlisted BrainFlow Athena control configuration."""
+    if preset not in SUPPORTED_PRESETS:
+        raise ValueError(f"Unsupported Athena preset: {preset}")
+    return f"preset={preset};low_latency={str(low_latency).lower()}"
+
 
 
 @dataclass(frozen=True)
@@ -26,6 +35,8 @@ class AthenaSettings:
     stall_timeout_seconds: float = 10.0
 
     def __post_init__(self) -> None:
+        if self.preset_command not in {make_preset_command(p, low) for p in SUPPORTED_PRESETS for low in (False, True)}:
+            raise ValueError("Unsupported Athena preset command")
         if not math.isfinite(self.duration_seconds) or self.duration_seconds <= 0:
             raise ValueError("Duration must be positive and finite")
         if not 1 <= self.discovery_timeout_seconds <= 60:
