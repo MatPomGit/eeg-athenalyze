@@ -30,3 +30,21 @@ class PhysicalCompletenessTests(unittest.TestCase):
 
     def test_short_mock_diagnostic_is_not_rejected(self):
         validate_sample_coverage(4, 0.05, 256.0)
+
+class AthenaPresetTests(unittest.TestCase):
+    def test_allowed_presets_and_latency_flags(self):
+        from eeg_athenalyze.muse_athena import make_preset_command
+        for preset in ("p21", "p1035", "p1041"):
+            for enabled in (False, True):
+                command = make_preset_command(preset, enabled)
+                self.assertEqual(
+                    AthenaSettings(preset_command=command).preset_command,
+                    command,
+                )
+
+    def test_reject_unverified_raw_commands(self):
+        from eeg_athenalyze.muse_athena import make_preset_command
+        with self.assertRaises(ValueError):
+            make_preset_command("p1034;dc001", True)
+        with self.assertRaisesRegex(ValueError, "Unsupported"):
+            AthenaSettings(preset_command="preset=p21;low_latency=maybe")
