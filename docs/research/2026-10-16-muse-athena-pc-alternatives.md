@@ -76,3 +76,14 @@ This implementation is especially useful to compare control-message order, notif
 12. Older Muse Gen1 tool (not a valid MS-03 baseline): https://github.com/1jehuang/muse-eeg
 
 **Source caveat:** all above are public project documentation or reports; neither reported device compatibility nor MindVault marketing statements are independently validated against this project's physical Muse S Athena unit.
+
+
+## Implementation status (2026-10-16)
+
+The repository now exposes BrainFlow's allowlisted preset and latency choices without allowing arbitrary GATT commands:
+
+```powershell
+.\.venv\Scripts\python.exe -m eeg_athenalyze record --device muse-athena --preset p21 --no-low-latency --duration 60 --discovery-timeout 30 --output data\local\athena-p21-no-ll-01.eegz
+```
+
+Use a distinct output name for each condition. `--preset` accepts `p21`, `p1035`, `p1041`; `--low-latency` / `--no-low-latency` sets the BrainFlow option. Defaults stay at `p1041` with low latency enabled. The actual on-device effects of each option remain **unverified**; successful software CI is not hardware validation. Backend import for OpenMuse raw packet logs, Amused-Py format and LSL/XDF are **not yet implemented** and must satisfy independent format, timestamp provenance and privacy gates before being considered interchangeable with `.eegz`. Follow linked implementation issues.
