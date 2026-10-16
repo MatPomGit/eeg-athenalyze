@@ -104,3 +104,22 @@ def write_notification_summary(source: Path, output: Path) -> Path:
         json.dump(result, f, indent=2, sort_keys=True, allow_nan=False)
         f.write("\n")
     return output
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Standalone read-only analysis: python -m eeg_athenalyze.ble_notification_qc."""
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--input", type=Path, required=True)
+    parser.add_argument("--report", type=Path, required=True)
+    args = parser.parse_args(argv)
+    try:
+        result = write_notification_summary(args.input, args.report)
+    except (OSError, ValueError) as exc:
+        parser.exit(1, f"BLE notification QC failed: {exc}\n")
+    print(f"Saved non-raw BLE QC report: {result}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
