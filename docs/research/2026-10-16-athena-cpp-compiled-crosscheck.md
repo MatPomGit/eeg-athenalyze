@@ -1,0 +1,7 @@
+# Compiled C++ Athena EEG cross-check (issue #47)
+
+`tests/native/athena_cpp_oracle.cpp` is a small, independently compiled C++ implementation of the 14-bit LSB-first unpacking and the source-audited `1450/16383` µV scaling. `tests/test_athena_compiled_cpp.py` compiles it (if a C++ compiler is installed) and compares integer codes and scaled amplitude against the Python decoder for frozen 28-byte synthetic vectors, both TAGs and malformed inputs. Compiler absence is reported by unittest as **SKIP, never PASS** for C++ parity.
+
+Source evidence: BrainFlow `src/board_controller/muse/muse_athena.cpp` retrieved with blob SHA `1fab5576dfc8483a61bca87105163f6ea755616c`, and `muse_athena_constants.h`, inspected 2026-10-16. That blob SHA identifies a file, **not a pinned repository commit**. The executable is compiled from our **adapted test harness**. It is **not** BrainFlow's complete MuseAthena library, and is not a BlueMuse C# binary. Passing this test therefore establishes independent-language implementation consistency only.
+
+Next: obtain immutable repository commit SHAs, compile and execute the **original vendor production decoders** on identical 28-byte vectors, and record compiler versions, input hashes and output tables. Real BLE notification captures, firmware, electrode mapping, timestamps, and physiological/BIDS validity are separate, blocked physical gates. Never claim hardware validation from these synthetic fixtures.
