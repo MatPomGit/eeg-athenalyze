@@ -203,3 +203,8 @@ The example's 16-s PSD path detrends, notch-filters 48–52 and 58–62 Hz, band
 **General restrictions:** no real participant EEG in public CI or documentation; retain source bytes; no auto-filtering of suspected mains artifacts; preserve measured/host/reconstructed timestamp distinctions; do not unlock real EEG-BIDS based on simulated or self-reported external validation.
 
 **New reference links:** [BlueMuse README](https://github.com/kowalej/BlueMuse/blob/master/README.md), [BlueMuse release 3.1](https://github.com/kowalej/BlueMuse/releases/tag/v3.1.0), [MuseDataProcessing script](https://github.com/MatPomGit/MuseDataProcessing/blob/main/ProcessData.py), [BrainFlow fork](https://github.com/MatPomGit/brainflow), [Unreal plugin](https://github.com/brainflow-dev/BrainFlowUnrealPlugin), [BrainFlow collective](https://opencollective.com/brainflow), [Android test README](https://github.com/brainflow-dev/BrainFlowAndroidTest/blob/master/README.md).
+
+
+## Detailed packet protocol reference
+
+See [Muse S Athena BLE packet types, tagged payloads, preset command semantics and time sources](2026-10-16-muse-athena-packet-protocol.md). This reference separates documented packet formats, conflicting third-party descriptions and unverified hardware hypotheses, and maps to issues #47–#54.
