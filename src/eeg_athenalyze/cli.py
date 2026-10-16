@@ -174,6 +174,24 @@ def _record_physical(arguments: argparse.Namespace) -> int:
     return 0
 
 
+def _openmuse_external(arguments: argparse.Namespace) -> int:
+    from eeg_athenalyze.openmuse_external import find_openmuse, capture_openmuse
+    try:
+        if arguments.action == "find":
+            return find_openmuse(executable=arguments.openmuse_executable)
+        if arguments.output is None:
+            raise ValueError("--output is required for openmuse record")
+        output = capture_openmuse(
+            arguments.address, arguments.output, duration=arguments.duration,
+            executable=arguments.openmuse_executable,
+        )
+    except (OSError, RuntimeError, ValueError) as error:
+        print(f"OpenMuse operation failed: {error}", file=sys.stderr)
+        return 1
+    print(f"Saved external OpenMuse raw capture (not validated EEGZ): {output}")
+    return 0
+
+
 def _assess_physical(arguments: argparse.Namespace) -> int:
     from eeg_athenalyze.hardware_validation import assess_archive
 
@@ -268,6 +286,16 @@ def main(argv: list[str] | None = None) -> int:
     physical.add_argument("--preset", choices=("p21", "p1035", "p1041"), default="p1041")
     physical.add_argument("--low-latency", action=argparse.BooleanOptionalAction, default=True)
     physical.set_defaults(handler=_record_physical)
+
+    external = device_commands.add_parser(
+        "openmuse", help="run separate OpenMuse raw capture, without decoding to EEGZ"
+    )
+    external.add_argument("action", choices=("find", "record"))
+    external.add_argument("--openmuse-executable", default="OpenMuse")
+    external.add_argument("--address", default="")
+    external.add_argument("--duration", type=float, default=60.0)
+    external.add_argument("--output", type=Path)
+    external.set_defaults(handler=_openmuse_external)
 
     assess = device_commands.add_parser("assess", help="assess a real Muse archive")
     assess.add_argument("--session", type=Path, required=True)
