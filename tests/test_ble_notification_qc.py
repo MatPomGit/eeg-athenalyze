@@ -30,6 +30,9 @@ class NotificationQCTests(unittest.TestCase):
             self.assertEqual(report["parsed_notification_count"], 2)
             self.assertEqual(report["invalid_notification_count"], 1)
             self.assertEqual(report["tags"], {"0x11": 2})
+            self.assertEqual(report["primary_frame_count"], 2)
+            self.assertEqual(report["nominal_eeg_sample_positions"], 8)
+            self.assertEqual(report["adjacent_repeated_primary_indices"], 1)
             self.assertIsNone(report["packet_loss_estimate"])
             self.assertAlmostEqual(report["largest_host_notification_gap_seconds"], 1.99)
             output = Path(folder) / "summary.json"
@@ -66,3 +69,30 @@ class NotificationQCTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class MultiplePrimaryFrameTests(unittest.TestCase):
+    def test_concatenated_frames_and_subpacket_not_double_counted(self):
+        import json
+        from eeg_athenalyze.ble_notification_qc import SENSOR_SUFFIXES
+        # One notification, two primaries; first has a tagged EEG subpacket.
+        first_payload = bytes(28) + bytes([0x11, 4, 0, 0, 0]) + bytes(28)
+        def make(index, payload):
+            size = 14 + len(payload)
+            return (bytes([size]) + index.to_bytes(2, "little")
+                    + bytes(6) + bytes([0x11, 3]) + bytes(3) + payload)
+        raw = make(5, first_payload) + make(6, bytes(28))
+        with tempfile.TemporaryDirectory() as folder:
+            source = Path(folder) / "multi.jsonl"
+            source.write_text(json.dumps({
+                "receive_monotonic_seconds": 1.0,
+                "characteristic": SENSOR_SUFFIXES[0],
+                "payload_hex": raw.hex(),
+            }) + "\n")
+            report = summarize_notification_journal(source)
+            self.assertEqual(report["notification_count"], 1)
+            self.assertEqual(report["primary_frame_count"], 2)
+            self.assertEqual(report["eeg_tag_count"], 3)
+            self.assertEqual(report["nominal_eeg_sample_positions"], 12)
+            self.assertEqual(report["first_parsed_packet_index"], 5)
+            self.assertEqual(report["last_parsed_packet_index"], 6)
+            self.assertIsNone(report["packet_loss_estimate"])
