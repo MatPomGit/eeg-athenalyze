@@ -31,6 +31,10 @@ jobs:
           grep -q 'extract_lsb_bits' upstream-brainflow/src/board_controller/muse/muse_athena.cpp
           grep -q 'MUSE_ATHENA_EEG_SCALE_FACTOR' upstream-brainflow/src/board_controller/muse/muse_athena.cpp
           sha256sum upstream-brainflow/src/board_controller/muse/muse_athena.cpp
+      - name: Install SimpleBLE Linux system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libdbus-1-dev libudev-dev
       - name: Configure original BrainFlow BLE-enabled native library
         shell: bash
         run: |
