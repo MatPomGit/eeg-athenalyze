@@ -1,0 +1,7 @@
+# Source-pinned native BrainFlow build, issue #47
+
+Reproducible CI build targets the **original** `MatPomGit/brainflow` source tree at commit `e3caf4b7289a2616efb76c8a3276d2c2086fd488`. Workflow: `.github/workflows/athena-brainflow-native.yml`. The build attempts `BoardController` with `BUILD_BLE=ON`, retaining `muse_athena.cpp` without modifying it, and emits SHA-256 of the source file.
+
+This is a native **build/provenance gate only**. It does NOT invoke the Athena decoding function with synthetic payloads, prove BrainFlow/BlueMuse parity, validate timestamp/packet framing, nor connect a Muse headset. A green CI run only supports source-pinned native library compilation, not decoder correctness; a failed build must be diagnosed, not waived.
+
+Required next stage: write an isolated integration harness that injects known TAG 0x11 and 0x12 frames into the actual BrainFlow Athena data-handling path, captures channel-specific output, and compares code/µV values with the source-pinned BlueMuse DecodeEEG result. Such a harness must explicitly handle the driver's internal board descriptors and BLE callbacks without real radio access. Preserve exact compiler/build/source revisions, test data checksums, and any unsupported code path. Real GATT bytes, firmware, electrode map, physical clock/ADC saturation and EEG-BIDS validity remain separate hardware gates. No costs or participant EEG data.
