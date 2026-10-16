@@ -3,7 +3,7 @@ import unittest
 
 from eeg_athenalyze.athena_packet_reference import (
     codes_to_uv, decode_eeg_tag_payload, decode_lsb_14bit,
-    encode_lsb_14bit, summarize_packet_indices,
+    encode_lsb_14bit, summarize_packet_indices, brainflow_candidate_sample_timestamp,
 )
 
 
@@ -40,10 +40,10 @@ class PackedEegReferenceTests(unittest.TestCase):
 
     def test_scale_is_explicit_and_not_a_hardware_claim(self):
         a = codes_to_uv((0, 8192, 16383))
-        self.assertEqual(a[0], -725.0)
+        self.assertAlmostEqual(a[0], -8192 * 1450 / 16383)
         self.assertEqual(a[1], 0.0)
         self.assertLess(a[2], 725.0)
-        self.assertNotEqual(a[2], codes_to_uv((16383,), denominator=16383)[0])
+        self.assertNotEqual(a[2], codes_to_uv((16383,), denominator=16384)[0])
         with self.assertRaises(ValueError):
             codes_to_uv((8192,), denominator=1)
 
@@ -69,3 +69,39 @@ class PacketIndexTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class NativeDriverParityTests(unittest.TestCase):
+    """Regressions from actual BrainFlow MuseAthena C++ implementation."""
+
+    def test_known_bitstream_not_just_roundtrip(self):
+        # 16 interleaved 14-bit sample codes, expected from BlueMuse C# layout.
+        codes = tuple(s * 100 + c for s in range(4) for c in range(4))
+        raw = encode_lsb_14bit(codes)
+        expected = tuple(tuple(codes[4 * s + c] for c in range(4)) for s in range(4))
+        self.assertEqual(decode_eeg_tag_payload(0x11, raw), expected)
+        self.assertAlmostEqual(codes_to_uv((16383,))[0], 8191 * 1450 / 16383)
+
+    def test_first_packet_host_time_backfills_nominal_period(self):
+        ts = [brainflow_candidate_sample_timestamp(-1, 100, i, 4, 256) for i in range(4)]
+        self.assertEqual(ts[-1], 100)
+        for a, b in zip(ts, ts[1:]):
+            self.assertAlmostEqual(b - a, 1 / 256)
+
+    def test_repeated_host_timestamp_yields_duplicates(self):
+        ts = [brainflow_candidate_sample_timestamp(100, 100, i, 4, 256) for i in range(4)]
+        self.assertEqual(ts, [100] * 4)
+        # Shows a software path to duplicates; not evidence of missing BLE bytes.
+
+    def test_short_host_interval_uses_interpolation(self):
+        ts = [brainflow_candidate_sample_timestamp(100, 100.004, i, 4, 256) for i in range(4)]
+        self.assertEqual(ts[-1], 100.004)
+        self.assertAlmostEqual(ts[0], 100 + 1/256)
+        self.assertAlmostEqual(ts[1], 100.002)
+
+    def test_long_host_interval_uses_nominal_period(self):
+        ts = [brainflow_candidate_sample_timestamp(100, 101, i, 4, 256) for i in range(4)]
+        self.assertAlmostEqual(ts[0], 100 + 1/256)
+        self.assertAlmostEqual(ts[3], 100 + 4/256)
+
+    def test_nonpositive_rate_or_count_uses_host_time(self):
+        self.assertEqual(brainflow_candidate_sample_timestamp(100, 102, 0, 0, 256), 102)

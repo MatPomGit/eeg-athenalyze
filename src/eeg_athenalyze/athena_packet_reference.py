@@ -41,7 +41,7 @@ def encode_lsb_14bit(values: Iterable[int]) -> bytes:
     return stream.to_bytes((len(raw) * EEG_BITS + 7) // 8, "little")
 
 
-def codes_to_uv(codes: Iterable[int], *, denominator: int = 16384) -> tuple[float, ...]:
+def codes_to_uv(codes: Iterable[int], *, denominator: int = 16383) -> tuple[float, ...]:
     """Convert candidate offset-binary values without claiming ADC validation."""
     if denominator not in (16383, 16384):
         raise ValueError("Denominator must be 16383 or 16384")
@@ -83,3 +83,25 @@ def summarize_packet_indices(indices: Iterable[int], *, modulus: int | None = No
     return {"count": len(values), "repeated_adjacent_indices": repeated,
             "index_jump_candidates": sum(d > 1 for d in deltas),
             "packet_loss_estimate": None, "clock_validated": False}
+
+
+def brainflow_candidate_sample_timestamp(
+    last_timestamp: float, current_timestamp: float,
+    sample_index: int, n_samples: int, sampling_rate: float,
+) -> float:
+    """Exact branch model of upstream MuseAthena::get_sample_timestamp.
+
+    This models software host timing, NOT the Muse hardware clock. It exists
+    solely to make duplicate timestamps reproducible in deterministic tests.
+    """
+    if n_samples <= 0 or sampling_rate <= 0:
+        return current_timestamp
+    if last_timestamp <= 0.0:
+        return current_timestamp - (n_samples - sample_index - 1) / sampling_rate
+    if current_timestamp <= last_timestamp:
+        return current_timestamp
+    proposal = last_timestamp + (sample_index + 1) / sampling_rate
+    if proposal <= current_timestamp:
+        return proposal
+    step = (current_timestamp - last_timestamp) / n_samples
+    return last_timestamp + step * (sample_index + 1)
