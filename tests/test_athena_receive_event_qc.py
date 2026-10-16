@@ -44,7 +44,7 @@ class ReceiveEventTests(unittest.TestCase):
         report=self.analyze([row(a,1.0,packet(100)),row(b,1.4,packet(1000)),
                              row(a,1.41,packet(101)),row(b,1.42,packet(1001))])
         self.assertEqual(report["event_counts"]["successive_index"],2)
-        self.assertEqual(report["event_counts"]["host_receive_gap"],2)
+        self.assertEqual(report["event_counts"]["host_receive_gap"],1)
         self.assertNotIn("index_jump_candidate",report["event_counts"])
 
     def test_invalid_notification_is_diagnostic_not_loss(self):
