@@ -87,3 +87,15 @@ The repository now exposes BrainFlow's allowlisted preset and latency choices wi
 ```
 
 Use a distinct output name for each condition. `--preset` accepts `p21`, `p1035`, `p1041`; `--low-latency` / `--no-low-latency` sets the BrainFlow option. Defaults stay at `p1041` with low latency enabled. The actual on-device effects of each option remain **unverified**; successful software CI is not hardware validation. Backend import for OpenMuse raw packet logs, Amused-Py format and LSL/XDF are **not yet implemented** and must satisfy independent format, timestamp provenance and privacy gates before being considered interchangeable with `.eegz`. Follow linked implementation issues.
+
+
+### Optional OpenMuse external invocation (new CLI)
+
+OpenMuse is **not** installed automatically, not imported into the main interpreter, and its raw data is **not** silently converted to EEGZ. First install it into a separate environment using the upstream instructions; discover the actual `OpenMuse.exe` path in that environment.
+
+```powershell
+.\.venv\Scripts\python.exe -m eeg_athenalyze devices openmuse find --openmuse-executable .\.venv-openmuse\Scripts\OpenMuse.exe
+.\.venv\Scripts\python.exe -m eeg_athenalyze devices openmuse record --openmuse-executable .\.venv-openmuse\Scripts\OpenMuse.exe --address DEVICE_FROM_FIND --duration 60 --output data\local\openmuse-raw01.txt
+```
+
+The wrapper calls upstream `find`/`record` without a shell; on success requires a nonempty output and refuses existing paths. If upstream emits a partial file on failure, retain it and treat it as **unverified**, not a complete recording. Only one BLE acquisition program may connect at a time. Do not commit raw human EEG. Subsequent decoding and direct import are tracked in issue #41. These subcommands have mocked software tests; they have **not been verified on a physical Athena device**.
