@@ -1,0 +1,51 @@
+name: Athena pinned BrainFlow native build
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/athena-brainflow-native.yml'
+      - 'docs/research/2026-10-16-athena-brainflow-native-build.md'
+jobs:
+  brainflow-original-library:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 20
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+      - name: Checkout pinned BrainFlow sources
+        uses: actions/checkout@v4
+        with:
+          repository: MatPomGit/brainflow
+          ref: e3caf4b7289a2616efb76c8a3276d2c2086fd488
+          path: upstream-brainflow
+          submodules: recursive
+          persist-credentials: false
+      - name: Verify exact upstream revision and EEG decoder
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C upstream-brainflow rev-parse HEAD)" = e3caf4b7289a2616efb76c8a3276d2c2086fd488
+          test -f upstream-brainflow/src/board_controller/muse/muse_athena.cpp
+          grep -q 'extract_lsb_bits' upstream-brainflow/src/board_controller/muse/muse_athena.cpp
+          grep -q 'MUSE_ATHENA_EEG_SCALE_FACTOR' upstream-brainflow/src/board_controller/muse/muse_athena.cpp
+          sha256sum upstream-brainflow/src/board_controller/muse/muse_athena.cpp
+      - name: Install SimpleBLE Linux system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libdbus-1-dev libudev-dev
+      - name: Configure original BrainFlow BLE-enabled native library
+        shell: bash
+        run: |
+          cmake -S upstream-brainflow -B /tmp/brainflow-athena-build -DCMAKE_BUILD_TYPE=Release -DBUILD_BLE=ON -DBUILD_TESTS=OFF -DBUILD_SYNCHRONI_SDK=OFF -DBRAINFLOW_COPY_TO_PACKAGE_DIRS=OFF
+      - name: Build original BrainFlow board controller
+        shell: bash
+        run: |
+          cmake --build /tmp/brainflow-athena-build --target BoardController --parallel 2
+      - name: Label evidence correctly
+        run: |
+          echo 'Pinned original BrainFlow board controller built: yes'
+          echo 'Synthetic Athena notification injected into BrainFlow: no'
+          echo 'Native BrainFlow decoder parity against BlueMuse: NOT VALIDATED'
+          echo 'Physical Muse S Athena verified: no'
